@@ -113,13 +113,16 @@ Applying that rule to what Phase 1 actually built:
 
 Net effect: only `A2uiSurfaceView` actually changes. Everything else Phase 1 built was already correctly scoped once the UI-owned-controller exception is applied — no rewrite needed, just wiring.
 
-One agent, after all Phase 1 branches are merged:
-- [ ] New `ReportSubmissionController` (`@riverpod` Notifier): owns the end-to-end report-submission lifecycle (idle → processing → rendered/failed — *not* the recording UI state, that stays in `MicrophoneButton`), wraps Track B's `SubmitReport`, injects Track A's real `getNearbyConflicts`/location providers (replacing the placeholder params Track B was built against), and pushes the resulting stream into Track C's `conversationProvider` transport seam. The real `a2uiSendHandlerProvider` implementation (button-tap follow-ups + `share_alert` interception) is wired via a `ProviderScope` override at the app root, not by editing `a2ui_providers.dart` directly, to avoid a circular import between the two files
-- [ ] Convert the six stateful widgets per the table above
-- [ ] Wire the real end-to-end flow: GPS → risk context → mic/text → Firebase AI → blueprint → GenUI render → Drift cache write → Share
-- [ ] Resolve provider wiring conflicts (multiple tracks will have added Riverpod providers independently)
-- [ ] Kill-switch check: turn off network mid-session, confirm offline rehydration actually renders the last cached blueprint
-- [ ] Fix any A2UI component name/prop mismatches between what Track B's prompt asks Gemini to emit and what Track C's catalog registers
+One agent, after all Phase 1 branches are merged — **done, commit `0d1249b`**:
+- [x] New `ReportSubmissionController` (`@riverpod` Notifier): owns the end-to-end report-submission lifecycle (idle → processing → rendered/failed — *not* the recording UI state, that stays in `MicrophoneButton`), wraps Track B's `SubmitReport`, injects Track A's real `getNearbyConflicts`/location providers (replacing the placeholder params Track B was built against), and pushes the resulting stream into Track C's `conversationProvider` transport seam. The real `a2uiSendHandlerProvider` implementation (button-tap follow-ups + `share_alert` interception) is wired via a `ProviderScope` override at the app root (`lib/app/wiring/gemini_send_handler.dart`), not by editing `a2ui_providers.dart` directly, to avoid a circular import between the two files
+- [x] `A2uiSurfaceView` converted to `ConsumerWidget` (only widget that actually needed converting, per the refined rule above); `MicrophoneButton`/`TextInputModal`/`TutorialScreen`/`PermissionsScreen`/`OnboardingFlow` unchanged, wired at the call site only
+- [x] Wired the real end-to-end flow in `lib/main.dart`: GPS → risk context → mic/text → Firebase AI → blueprint → GenUI render → Drift cache write. `AppShell`'s duplicate hardcoded mic button replaced with a composed `footer` slot (real `MicrophoneButton` + text trigger)
+- [x] Resolved provider wiring — no conflicts found; each track's providers were cleanly namespaced already
+- [x] Offline fallback wired: any live-call failure in `ReportSubmissionController._run` calls `rehydrateFromCache` before surfacing `ReportFailed` — **not yet manually verified on a real device** (that's a Phase 3 QA step, see below)
+- [ ] Fix any A2UI component name/prop mismatches between what Track B's prompt asks Gemini to emit and what Track C's catalog registers — **unverified**: no live Gemini call has been exercised yet (Track C/B were built and tested against the frozen contract's worked-example fixture, not a real API response). First live run is a Phase 3 QA task.
+- [x] Verified: `flutter analyze` clean, all 33 tests pass, `flutter build apk --debug` succeeds
+
+**Known gap going into Phase 3**: everything above is verified through unit/widget tests and a successful build — nothing has been run on an actual device/emulator yet, so the live Gemini round-trip (does it actually follow the fenced-JSON format? does it stick to the catalog's component names?) and the real offline kill-switch (turn off network mid-session) are both still unverified. This is exactly what Phase 3 is for.
 
 ### Phase 3 — QA + Build → **00:00 checkpoint**
 - [ ] Manual run-through of the primary flow (voice) and alternate flow (text) on a real device or emulator — **you drive this**, agent fixes bugs live
