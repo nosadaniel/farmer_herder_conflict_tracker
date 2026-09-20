@@ -12,6 +12,18 @@ Everything below is scoped to fit that window. **Scope has been cut harder than 
 
 ---
 
+## Tooling convention: FVM (Flutter Version Management)
+This project is pinned to **Flutter 3.47.2** via `fvm` (already installed locally, confirmed via `fvm list` — no download needed).
+
+- Phase 0 step zero: `fvm use 3.47.2` inside the project root to write `.fvmrc` / `.fvm/` config.
+- **Every** Flutter/Dart command in every phase/track, for every agent, goes through fvm — never call the bare binary:
+  - `fvm flutter <cmd>` (not `flutter <cmd>`)
+  - `fvm dart <cmd>` (not `dart <cmd>`)
+  - e.g. `fvm flutter create .`, `fvm flutter pub get`, `fvm flutter build apk`, `fvm dart run build_runner build`
+- This applies to all parallel-track agents in Phase 1 too — bake it into each track's prompt so no agent falls back to a system-wide Flutter install.
+
+---
+
 ## Non-negotiable MVP (must work by 00:00)
 1. App opens → GPS detected → map renders with historical hotspots from bundled `farmer_herder_conflict.json`
 2. Press-and-hold mic → voice → Firebase AI (Gemini) transcription → A2UI blueprint generated
@@ -38,7 +50,8 @@ Phase 4  SUBMISSION ARTIFACTS (mixed, rest of runway)    → 18:00 checkpoint
 
 ### Phase 0 — Foundation (blocking, do first)
 One agent, no parallelism (everyone else depends on this existing):
-- [ ] `flutter create` project skeleton, `pubspec.yaml` with exact versions from `idea/tech_stack.md`
+- [ ] `fvm use 3.47.2` to pin the project's Flutter SDK (see "Tooling convention" above) — do this before anything else
+- [ ] `fvm flutter create` project skeleton, `pubspec.yaml` with exact versions from `idea/tech_stack.md`
 - [ ] `lib/core/` scaffolding: constants, theme (colors/typography from `phase_2_ux_design.md`), error handling, routing shell
 - [ ] `lib/features/{conflict_reporting,map,weather}/` empty layered folders (data/domain/application/presentation) per `phase_2_development_patterns.md`
 - [ ] Riverpod wiring (`flutter_riverpod` + `riverpod_annotation`, `build_runner` configured)
