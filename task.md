@@ -95,7 +95,21 @@ Launch once Phase 0 is merged. Each track = one agent in its own git worktree/br
 **Codegen discipline**: if a track adds/edits a `@riverpod`-annotated class or a Drift table, it must run `fvm dart run build_runner build --delete-conflicting-outputs` and commit the regenerated `.g.dart` files in the same commit. Note `_build_test.yml` does **not** actually catch a forgotten commit here — it regenerates fresh before analyze/test/build, which overwrites whatever staleness was checked out and lets CI pass either way. So CI passing is not proof the committed `.g.dart` is current; it only proves the *source* still generates and compiles. Since the deploy jobs trust the committed files as-is (no regen step, per your call above), a stale commit here is a silent risk until Phase 2 integration or Phase 3 QA surfaces it as a runtime/compile mismatch. Catch it at review time, not CI time.
 
 ### Phase 2 — Integration (serial)
+
+**Architecture for this phase** (confirmed against `riverpod-3.4.3` source, `lib/src/core/base_ref.dart`): `Ref` exposes `onDispose(cb)`, `keepAlive()`, `onCancel(cb)`, `onResume(cb)` — a full lifecycle hook set, so Riverpod can own *any* Dart object (`TextEditingController`, `AudioRecorder`, `CarouselSliderController`, stream subscriptions), not just app-level business state. Phase 2 converts every Phase-1 `StatefulWidget`/`ConsumerStatefulWidget` to a pure `ConsumerWidget` on this basis — screens become `ref.watch(...)` → render, all imperative logic/object lifecycle moves into Notifiers:
+
+| Widget | Current local state | Becomes |
+|---|---|---|
+| `MicrophoneButton` | `AudioRecorder`, `_isRecording`, timer | Folded into a new `ReportSubmissionController` (see below) — owns the recorder via `ref.onDispose`, exposes idle/recording/error state |
+| `TextInputModal` | `TextEditingController`, `_errorText` | A provider owns the controller (`ref.onDispose(controller.dispose)`); validation state in a small Notifier |
+| `A2uiSurfaceView` | `_error`, manual `StreamSubscription` | A derived provider mirrors `conversationProvider`'s events via `ref.listen`/`ref.onDispose` — no manual subscription in the widget |
+| `TutorialScreen` | `CarouselSliderController`, `_currentIndex` | Small `TutorialController` Notifier |
+| `PermissionsScreen` | `_requesting`, `_requested` | `AsyncNotifier` exposing loading/data/error via `AsyncValue` |
+| `OnboardingFlow` | `_checkingStatus`, `_step` | Folded into the existing `OnboardingController` (Track E already made this `@riverpod`) |
+
 One agent, after all Phase 1 branches are merged:
+- [ ] New `ReportSubmissionController` (`@riverpod` Notifier): owns the end-to-end report lifecycle (idle → recording → transcribing → generating → rendered/error), wraps Track B's `SubmitReport`, injects Track A's real `getNearbyConflicts`/location providers (replacing the placeholder params Track B was built against), and pushes the resulting stream into Track C's `conversationProvider` transport seam (the `a2uiSendHandlerProvider` override Track C built specifically for this)
+- [ ] Convert the six stateful widgets per the table above
 - [ ] Wire the real end-to-end flow: GPS → risk context → mic/text → Firebase AI → blueprint → GenUI render → Drift cache write → Share
 - [ ] Resolve provider wiring conflicts (multiple tracks will have added Riverpod providers independently)
 - [ ] Kill-switch check: turn off network mid-session, confirm offline rehydration actually renders the last cached blueprint
