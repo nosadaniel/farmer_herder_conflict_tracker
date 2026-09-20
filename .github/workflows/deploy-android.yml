@@ -31,9 +31,9 @@ jobs:
 
       - uses: ./.github/actions/setup-flutter
 
-      - name: Generate code (Drift/Riverpod)
-        run: dart run build_runner build --delete-conflicting-outputs
-
+      # No codegen step here — the committed .g.dart files are trusted,
+      # and `gate` (this job's dependency) already regenerated + validated
+      # freshness before this job runs. See task.md CI/CD notes.
       - run: flutter build apk --release
 
       - name: Upload to Firebase App Distribution
