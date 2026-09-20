@@ -1,0 +1,16 @@
+[project]
+name = "farmer-herder-conflict-filter"
+version = "1.0.0"
+description = "Filter UCDP Nigeria conflict data for farmer-herder conflicts"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+filter-conflicts = "filter_farmer_herder:main"
+
+[tool.uv]
+dev-dependencies = [
+  "pytest>=7.0",
+  "mypy>=1.0",
+]

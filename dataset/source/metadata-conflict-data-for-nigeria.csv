@@ -1,0 +1,14 @@
+Field,Label,Value
+created,Created,2019-09-16T10:21:37.687184
+description,Description,UCDP Georeferenced Event Data
+format,File Format,CSV
+download_url,Download URL,https://data.humdata.org/dataset/a2260243-108d-4df4-a7e6-a010bcbb553f/resource/9e2fcefc-24ab-4903-88fd-fa089c8edc2b/download/conflict_data_nga.csv
+id,Resource ID,9e2fcefc-24ab-4903-88fd-fa089c8edc2b
+last_modified,Updated,2026-03-01T20:35:29.275615
+metadata_modified,Metadata Updated,2026-07-03T20:05:41.214781
+microdata,Microdata,False
+dataset_id,Dataset ID,a2260243-108d-4df4-a7e6-a010bcbb553f
+resource_type,Resource Type,file.upload
+name,Resource Name,Conflict Data for Nigeria
+mimetype,MIME Type,
+size,Size,4.8M
