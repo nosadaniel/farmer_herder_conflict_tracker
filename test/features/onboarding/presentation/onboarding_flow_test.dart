@@ -1,11 +1,3 @@
-// Co-located widget test inside lib/features per phase_2_development_patterns.md
-// ("unit tests and widget tests live alongside the code they test within
-// each feature folder"). `flutter_test` is a dev_dependency (correctly, it
-// should never ship in a release build) so the analyzer's
-// depend_on_referenced_packages lint fires here by design of that
-// convention — silenced rather than moved to top-level test/, which would
-// violate this track's folder ownership boundary.
-// ignore_for_file: depend_on_referenced_packages
 import 'package:drift/native.dart';
 import 'package:farmer_herder_conflict_tracker/core/database/app_database.dart';
 import 'package:farmer_herder_conflict_tracker/core/database/database_provider.dart';
