@@ -48,19 +48,23 @@ Phase 3  QA + BUILD           (serial + you, ~90 min)   → 00:00 checkpoint
 Phase 4  SUBMISSION ARTIFACTS (mixed, rest of runway)    → 18:00 checkpoint
 ```
 
-### Phase 0 — Foundation (blocking, do first)
+### Phase 0 — Foundation (blocking, do first) — ✅ DONE (commit `9651fff`)
 One agent, no parallelism (everyone else depends on this existing):
-- [ ] `fvm use 3.47.2` to pin the project's Flutter SDK (see "Tooling convention" above) — do this before anything else
-- [ ] `fvm flutter create` project skeleton, `pubspec.yaml` with exact versions from `idea/tech_stack.md`
-- [ ] `lib/core/` scaffolding: constants, theme (colors/typography from `phase_2_ux_design.md`), error handling, routing shell
-- [ ] `lib/features/{conflict_reporting,map,weather}/` empty layered folders (data/domain/application/presentation) per `phase_2_development_patterns.md`
-- [ ] Riverpod wiring (`flutter_riverpod` + `riverpod_annotation`, `build_runner` configured)
-- [ ] Drift base `AppDatabase` with the three tables (`Reports`, `ConflictData`, `Cache`) from `phase_2_tech_architecture.md` — empty/migratable, not yet feature-wired
-- [ ] Static app shell widget (header, dynamic canvas placeholder, persistent footer with mic + text icons) per UX doc Screen 5
-- [ ] Firebase project wiring **once you provide credentials** (see "Your responsibilities" — this step blocks on you)
-- [ ] `.env` for the Sentry DSN (your preference), consumed via Flutter's native `--dart-define-from-file=.env` — **no package dependency** (not `flutter_dotenv`). Read it at compile time with `String.fromEnvironment('SENTRY_DSN')`. Gitignore `.env`, commit a blank `.env.example`. Firebase/Open-Meteo/OSM don't need `.env` — see earlier discussion.
-- [ ] Scaffold the CI workflow file(s) described in "CI/CD Pipeline" below (workflow YAML only — the `ci.yml` build+test job should be live from the first push so Phase 1 branches get feedback on every sync)
-- [ ] Commit as the base branch all feature branches fork from
+- [x] `fvm use 3.47.2` to pin the project's Flutter SDK (see "Tooling convention" above) — do this before anything else
+- [x] `fvm flutter create` project skeleton, `pubspec.yaml` with exact versions from `idea/tech_stack.md` (note: `golden_toolkit` pinned at `2.0.1` in the doc doesn't exist on pub.dev — corrected to `^0.15.0`, everything else resolved as-specified)
+- [x] `lib/core/` scaffolding: constants, theme (colors/typography from `phase_2_ux_design.md`), error handling, routing shell
+- [x] `lib/features/{conflict_reporting,map,weather,onboarding}/` empty layered folders (data/domain/application/presentation) per `phase_2_development_patterns.md` — added `onboarding` too since Track E owns it
+- [x] Riverpod wiring (`flutter_riverpod` + `riverpod_annotation`, `build_runner` configured) — codegen verified working
+- [x] Drift base `AppDatabase` with the three tables (`Reports`, `ConflictData`, `Cache`) from `phase_2_tech_architecture.md` — empty/migratable, not yet feature-wired
+- [x] Static app shell widget (header, dynamic canvas placeholder, persistent footer with mic + text icons) per UX doc Screen 5
+- [ ] Firebase project wiring **once you provide credentials** (see "Your responsibilities" — this step blocks on you) — **still pending, blocks Track B**
+- [x] `.env` for the Sentry DSN, consumed via `--dart-define-from-file=.env` — no package dependency. `lib/core/config/env.dart` + `.env.example` committed, real `.env` gitignored.
+- [x] CI workflow files scaffolded per the DRY "CI/CD Pipeline" design (composite action + reusable `_build_test.yml` + 3 thin workflows) — **not yet pushed to GitHub** since there's no remote yet (see "Your responsibilities" #3)
+- [x] Bundled `farmer_herder_conflict.json` as an app asset (`assets/data/`, registered in `pubspec.yaml`) — unblocks Track A immediately
+- [x] Verified: `flutter analyze` clean, smoke test passes, `build_runner` codegen succeeds
+- [x] Committed as the base branch all feature branches fork from
+
+**Blocked on you before Phase 1 can fully start**: Firebase project + `google-services.json` (Track B needs it), and a GitHub remote (so CI actually runs and Phase 1 worktrees have somewhere to push/merge).
 
 ### Phase 1 — Parallel feature tracks
 Launch once Phase 0 is merged. Each track = one agent in its own git worktree/branch, touching only its feature folder + its own tests. Sync/merge to base every 60–90 min to catch integration drift early (don't wait until the end).
