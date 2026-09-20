@@ -1,0 +1,61 @@
+# FVM Version Cache
+.fvm/
+
+# Secrets — never commit real values (see .env.example for the shape)
+.env
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Web related
+web/favicon.png.dart_tool/
+
+# Firebase config — do not commit the real one; drop your project's copy locally
+# (kept out of git since it's environment-specific for this hackathon build)
+**/google-services.json
+**/GoogleService-Info.plist
+lib/firebase_options.dart
+
+# Android signing
+key.properties
+*.jks
+*.keystore

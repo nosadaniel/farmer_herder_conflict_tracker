@@ -1,0 +1,35 @@
+name: Deploy Android (Firebase App Distribution)
+
+# Manual only — during Phase 1 the repo gets many WIP pushes from parallel
+# tracks; auto-deploying on every push would spam testers or fail on
+# incomplete branches. You trigger this deliberately (00:00 checkpoint, and
+# again before 18:00 if there's a later build).
+on:
+  workflow_dispatch:
+
+jobs:
+  gate:
+    uses: ./.github/workflows/_build_test.yml
+
+  deploy:
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-flutter
+
+      - name: Generate code (Drift/Riverpod)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # Debug build by default — switch to `flutter build apk --release`
+      # once release signing (key.properties) is set up.
+      - run: flutter build apk --debug
+
+      - name: Upload to Firebase App Distribution
+        uses: wu-vincent/firebase-app-distribution-github-action@v4
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          file: build/app/outputs/flutter-apk/app-debug.apk
+          groups: testers

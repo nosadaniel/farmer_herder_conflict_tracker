@@ -1,0 +1,25 @@
+name: Setup Flutter
+description: >
+  Single source of truth for "get a working Flutter environment with deps
+  installed". Reads the pinned SDK version from the committed .fvmrc so
+  local (fvm) and CI always use the same Flutter version, then installs
+  deps. Reused by ci.yml, deploy-android.yml, and deploy-web.yml — do not
+  duplicate these steps in individual workflows.
+
+runs:
+  using: composite
+  steps:
+    - name: Read pinned Flutter version from .fvmrc
+      id: fvmrc
+      uses: kuhnroyal/flutter-fvm-config-action@v3
+
+    - name: Install Flutter ${{ steps.fvmrc.outputs.FLUTTER_VERSION }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ steps.fvmrc.outputs.FLUTTER_VERSION }}
+        channel: ${{ steps.fvmrc.outputs.FLUTTER_CHANNEL }}
+        cache: true
+
+    - name: flutter pub get
+      shell: bash
+      run: flutter pub get

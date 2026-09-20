@@ -1,0 +1,14 @@
+name: CI
+
+# Live from Phase 0 so every Phase 1 track's sync/merge gets immediate
+# feedback if it broke the build. Thin wrapper only — all real steps live in
+# _build_test.yml (reused by the deploy workflows too, so this is the exact
+# gate a deploy has to pass).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build_test:
+    uses: ./.github/workflows/_build_test.yml

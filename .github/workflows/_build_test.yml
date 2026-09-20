@@ -1,0 +1,26 @@
+name: Build & Test (reusable)
+
+# Single source of truth for "does this build pass": analyze, test, build a
+# debug APK. Called by ci.yml on every push, and by both deploy workflows as
+# a gate before they ship anything — so nothing deploys without passing the
+# exact same checks as a normal commit. Do not duplicate these steps
+# elsewhere; add new checks here once and every caller gets them for free.
+on:
+  workflow_call:
+
+jobs:
+  build_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-flutter
+
+      - name: Generate code (Drift/Riverpod)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - run: flutter analyze
+
+      - run: flutter test
+
+      - run: flutter build apk --debug
