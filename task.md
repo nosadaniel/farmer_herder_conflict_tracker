@@ -153,6 +153,18 @@ Net effect: the Flutter-setup logic exists in exactly one place, the Firebase-co
 
 ---
 
+## Planned CI/CD redesign — reviewed deployments (design now, implement after Phase 1)
+
+Current state above (`ci.yml` builds a debug APK on every push; deploy workflows are `workflow_dispatch`-only) stays as-is through Phase 1 — don't touch these workflow files mid-fan-out. Once Phase 1 lands, switch to:
+
+1. **`ci.yml` becomes lint + format + test only** — drop the `flutter build apk --debug` step from what runs on every push. Steps: `restore-firebase-config` → `setup-flutter` → codegen → `flutter analyze` → `dart format --output=none --set-exit-if-changed .` → `flutter test`. Faster feedback loop; the real build gets exercised for real at deploy time instead of redundantly on every push.
+2. **`deploy-android.yml` / `deploy-web.yml` trigger on `push: branches: [main]`** instead of `workflow_dispatch`, and their `deploy` job gets `environment: production` (or split `android-production`/`web-production` if you want to approve them independently). A GitHub Environment with **required reviewers** configured (Settings → Environments) makes the job auto-queue the moment something merges to `main`, then pause for an explicit approval click before it runs the real signed build + upload — same practical control as today's manual dispatch, but a genuine reviewed-deployment story (worth a line in the pitch deck's "production-ready" pitch), and it means a teammate could push while you stay the sole approver.
+3. `gate` (the lint/format/test reusable workflow) still runs before `deploy` in both cases — unchanged structurally, just renamed in spirit from "build/test gate" to "lint/format/test gate" now that the build step lives only in the deploy job itself.
+
+**New "Your responsibilities" item for this**: create the GitHub Environment(s) in Settings → Environments and add yourself (and any teammates) as required reviewers. Not needed until this redesign is actually implemented post-Phase-1.
+
+---
+
 ## Android release signing
 
 `android/app/build.gradle.kts` reads `android/key.properties` (gitignored) and falls back to debug signing when it's absent — verified locally, so this is safe to set up whenever you have a spare few minutes, no rush relative to Phase 1.
