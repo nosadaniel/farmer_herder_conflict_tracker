@@ -130,6 +130,13 @@ One agent, after all Phase 1 branches are merged — **done, commit `0d1249b`**:
 - [x] `OnboardingFlow` (the manual step-switching wrapper) retired — its two jobs (step-switching, "already onboarded" short-circuit) both moved into the router. `main.dart` now uses `MaterialApp.router`.
 - [x] Verified: `flutter analyze` clean, 29/29 tests pass (33→29 expected: `OnboardingFlow`'s 4 tests retired with it), debug APK builds.
 
+### Post-Phase-2 addition: `skeletonizer` shimmer loading states — done, commit pending
+`skeletonizer: 3.0.0` had been in `pubspec.yaml` since Phase 0 but unused until now.
+- [x] `lib/core/widgets/app_skeleton.dart`: a reusable `AppSkeleton` wrapper — the single place `skeletonizer` is configured (brand `ShimmerEffect` using `AppColors.neutral`/`AppColors.background`), composed by feature code rather than each feature calling `Skeletonizer` directly with its own colors.
+- [x] `A2uiSurfaceView`'s "nothing rendered yet, waiting on Gemini" state now uses `AppSkeleton` wrapping a fake layout shaped like a typical A2UI response (icon + headline + body text + action buttons, per the contract doc's component composition) instead of a bare `CircularProgressIndicator` — gives an "expectant" sense of the incoming layout. The follow-up-turn case (small corner spinner over *existing* rendered content) stays a plain spinner — skeletons are for "no content yet," not for overlaying content that's already visible.
+- [x] Verified: `flutter analyze` clean, all 29 tests pass (updated the loading-state test's assertion to match), debug APK builds.
+- Lower-priority/not done: the router's brief onboarding-status-loading spinner and the map's marker-loading state — both resolve fast enough that a skeleton adds little. `AppSkeleton` is there if a later pass wants them.
+
 ### Phase 3 — QA + Build → **00:00 checkpoint**
 - [ ] Manual run-through of the primary flow (voice) and alternate flow (text) on a real device or emulator — **you drive this**, agent fixes bugs live
 - [ ] Offline mode test

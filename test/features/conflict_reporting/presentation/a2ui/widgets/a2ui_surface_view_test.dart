@@ -107,38 +107,42 @@ void main() {
     },
   );
 
-  testWidgets('shows a spinner while Conversation.state.isWaiting', (
-    tester,
-  ) async {
-    // onSend never completes on its own — the test completes it manually —
-    // so isWaiting stays true for as long as the widget is pumped, letting
-    // us assert the loading spinner renders.
-    final completer = Completer<void>();
-    final container = ProviderContainer(
-      overrides: [
-        a2uiSendHandlerProvider.overrideWith((ref) {
-          return (ChatMessage message) => completer.future;
-        }),
-      ],
-    );
-    addTearDown(container.dispose);
+  testWidgets(
+    'shows the skeleton loader while Conversation.state.isWaiting with no '
+    'surface yet',
+    (tester) async {
+      // onSend never completes on its own — the test completes it manually —
+      // so isWaiting stays true for as long as the widget is pumped, letting
+      // us assert the loading placeholder renders.
+      final completer = Completer<void>();
+      final container = ProviderContainer(
+        overrides: [
+          a2uiSendHandlerProvider.overrideWith((ref) {
+            return (ChatMessage message) => completer.future;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const MaterialApp(home: Scaffold(body: A2uiSurfaceView())),
-      ),
-    );
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: Scaffold(body: A2uiSurfaceView())),
+        ),
+      );
 
-    final sendFuture = container.read(conversationProvider).sendRequest(
-      ChatMessage.user('report'),
-    );
-    await tester.pump();
+      final sendFuture = container.read(conversationProvider).sendRequest(
+        ChatMessage.user('report'),
+      );
+      await tester.pump();
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // The AppSkeleton-wrapped placeholder, not a bare spinner — see
+      // a2ui_surface_view.dart's _A2uiSkeletonLoader.
+      expect(find.text('Assessing the situation'), findsOneWidget);
 
-    completer.complete();
-    await sendFuture;
-    await tester.pump();
-  });
+      completer.complete();
+      await sendFuture;
+      await tester.pump();
+    },
+  );
 }

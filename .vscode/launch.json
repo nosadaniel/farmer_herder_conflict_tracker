@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "dev Debug",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "args": [
+                "--flavor",
+                "dev"
+            ],
+            "program": "apps/geiger_toolbox/lib/main_dev.dart"
+        },
+        {
+            "name": "dev Profile",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile",
+            "args": [
+                "--flavor",
+                "dev"
+            ],
+            "program": "apps/geiger_toolbox/lib/main_dev.dart"
+        },
+        {
+            "name": "Release",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+            "args": [
+                "--flavor",
+                "dev"
+            ],
+            "program": "apps/geiger_toolbox/lib/main_dev.dart"
+        },
+    ]
+}

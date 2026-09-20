@@ -15,15 +15,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genui/genui.dart';
 
+import '../../../../../core/widgets/app_skeleton.dart';
 import '../providers/a2ui_providers.dart';
 
 /// Drop-in widget for the app shell's "dynamic canvas" slot.
 ///
 /// Handles the two states the contract asks for, kept deliberately minimal
 /// (no animations/transitions):
-/// - loading (`Conversation.state.isWaiting`): a small spinner. Shown
-///   centered if nothing has rendered yet, or as a small corner indicator
-///   over the previous screen while a follow-up turn is in flight.
+/// - loading (`Conversation.state.isWaiting`): if nothing has rendered yet,
+///   an [AppSkeleton]-shimmered placeholder shaped like a typical A2UI
+///   response (icon + headline + body + buttons, per the contract doc's
+///   component composition) — gives an expectant sense of the incoming
+///   layout rather than a blank spinner. If a surface is already showing
+///   and a follow-up turn is in flight, a small corner spinner overlays the
+///   existing content instead — skeletons are for "nothing to show yet,"
+///   not for covering content that's already visible.
 /// - error (`conversationErrorProvider`, mirroring `ConversationError`
 ///   events — see a2ui_providers.dart): a simple inline error banner.
 ///
@@ -54,7 +60,7 @@ class A2uiSurfaceView extends ConsumerWidget {
 
         if (surfaceId == null) {
           if (state.isWaiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const _A2uiSkeletonLoader();
           }
           return const SizedBox.shrink();
         }
@@ -81,6 +87,61 @@ class A2uiSurfaceView extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Shimmered placeholder shown while waiting for Gemini's first response —
+/// a fake layout shaped like a typical risk-state screen (icon, headline,
+/// body text, 1-2 action buttons; see `docs/a2ui_gemini_contract.md` §3
+/// "WHAT TO GENERATE" and §6's worked example), composed with the shared
+/// [AppSkeleton] wrapper so the shimmer traces the *shape* of what's coming
+/// rather than a content-free spinner, with the same brand-consistent
+/// shimmer every other loading state in the app uses.
+class _A2uiSkeletonLoader extends StatelessWidget {
+  const _A2uiSkeletonLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.info_outline, size: 32),
+            const SizedBox(height: 12),
+            Text(
+              'Assessing the situation',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'One or two sentences describing what is happening and what '
+              'to do next will appear here shortly.',
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: null,
+                child: const Text('Primary action'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                onPressed: null,
+                child: const Text('Secondary action'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
