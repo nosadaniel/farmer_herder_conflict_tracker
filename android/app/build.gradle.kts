@@ -19,7 +19,10 @@ android {
         applicationId = "com.andela.farmerherder.farmer_herder_conflict_tracker"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Pinned to 26 (Android 8.0) per phase_2_prd.md's compatibility
+        // requirement, and comfortably above the minSdk 23 Firebase's
+        // Android SDKs (Firestore/Analytics/AI) require.
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
