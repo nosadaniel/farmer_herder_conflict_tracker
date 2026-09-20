@@ -1,6 +1,9 @@
 # FVM Version Cache
 .fvm/
 
+# Claude Code local settings / agent worktrees
+.claude/
+
 # Secrets — never commit real values (see .env.example for the shape)
 .env
 

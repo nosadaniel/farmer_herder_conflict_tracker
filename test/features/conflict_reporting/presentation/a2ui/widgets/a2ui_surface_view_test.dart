@@ -8,12 +8,6 @@
 // override that just triggers that fixture text — proving the render
 // pipeline works end-to-end without a live Gemini call.
 //
-// This test is co-located with the widget under test per
-// brainstorm_docs/phase_2_development_patterns.md's "Widget tests: same
-// directory" convention, which puts it under lib/ rather than top-level
-// test/ — flutter_test is a dev_dependency of this package either way, so
-// the analyzer's cross-package-publishing lint below doesn't apply here.
-// ignore_for_file: depend_on_referenced_packages
 import 'dart:async';
 
 import 'package:flutter/material.dart';
