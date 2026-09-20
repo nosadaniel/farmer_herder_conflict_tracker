@@ -124,6 +124,12 @@ One agent, after all Phase 1 branches are merged — **done, commit `0d1249b`**:
 
 **Known gap going into Phase 3**: everything above is verified through unit/widget tests and a successful build — nothing has been run on an actual device/emulator yet, so the live Gemini round-trip (does it actually follow the fenced-JSON format? does it stick to the catalog's component names?) and the real offline kill-switch (turn off network mid-session) are both still unverified. This is exactly what Phase 3 is for.
 
+### Post-Phase-2 addition: type-safe routing with `go_router` — done, commit `63c5e26`
+- [x] `go_router: 18.0.1` added; `lib/app/routing/{app_routes,app_router}.dart` — one typed route class per screen (`HomeRoute`, `OnboardingWelcomeRoute`, `OnboardingPermissionsRoute`, `OnboardingTutorialRoute`), each with a `path`/`name` constant and a `go(context)` helper. Hand-written, not `go_router_builder`/`TypedGoRoute` codegen — same practical type-safety benefit without an extra codegen dependency, and none of this app's routes take path parameters anyway.
+- [x] The `GoRouter` itself lives in a `@riverpod` provider watching `onboardingControllerProvider` — its `redirect` gates `/onboarding*` vs `/`, so there's no local "which screen" state anywhere in the app.
+- [x] `OnboardingFlow` (the manual step-switching wrapper) retired — its two jobs (step-switching, "already onboarded" short-circuit) both moved into the router. `main.dart` now uses `MaterialApp.router`.
+- [x] Verified: `flutter analyze` clean, 29/29 tests pass (33→29 expected: `OnboardingFlow`'s 4 tests retired with it), debug APK builds.
+
 ### Phase 3 — QA + Build → **00:00 checkpoint**
 - [ ] Manual run-through of the primary flow (voice) and alternate flow (text) on a real device or emulator — **you drive this**, agent fixes bugs live
 - [ ] Offline mode test
