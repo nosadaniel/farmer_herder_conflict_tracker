@@ -39,6 +39,17 @@ class AppTheme {
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
       ),
+      // Material 3's default TextButton minimum size (64x36) is under the
+      // UX doc's 48x48dp accessibility floor — match the other button
+      // themes above so every TextButton (e.g. onboarding's "Skip"/"Allow
+      // Later") is a large-enough touch target without repeating the
+      // override at every call site.
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          textStyle: base.textTheme.labelLarge,
+        ),
+      ),
     );
   }
 }
