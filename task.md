@@ -51,7 +51,14 @@ Phase 4  SUBMISSION ARTIFACTS (mixed, rest of runway)    → 18:00 checkpoint
 ### Phase 0 — Foundation (blocking, do first) — ✅ DONE (commit `9651fff`)
 One agent, no parallelism (everyone else depends on this existing):
 - [x] `fvm use 3.47.2` to pin the project's Flutter SDK (see "Tooling convention" above) — do this before anything else
-- [x] `fvm flutter create` project skeleton, `pubspec.yaml` with exact versions from `idea/tech_stack.md` (note: `golden_toolkit` pinned at `2.0.1` in the doc doesn't exist on pub.dev — corrected to `^0.15.0`, everything else resolved as-specified)
+- [x] `fvm flutter create` project skeleton, `pubspec.yaml` with exact versions from `idea/tech_stack.md`
+- [x] Package additions beyond the original tech_stack.md list, all pinned and resolved:
+  - `flutter_launcher_icons: 0.14.4` (dev) — generates the app icon
+  - `flutter_native_splash: 2.4.8` (dev) — generates the splash screen
+  - `carousel_slider_plus: 7.1.2` — Track E's onboarding screen carousel
+  - `mocktail: 1.0.5` (dev) — mocking for unit tests across all tracks
+  - `golden_test: 2.0.1` (dev) — **replaces `golden_toolkit`**: the doc's original `golden_toolkit: 2.0.1` pin doesn't exist on pub.dev (latest is `0.15.0`, discontinued); `golden_test: 2.0.1` is the real, actively-maintained package and is what's now in `pubspec.yaml`
+- [x] App icon + splash screen (Material 3, one shared design): shield (safety) + map pin (location) glyph in the app's earth-tone palette (`lib/core/theme/app_colors.dart` — forest green background, cream shield, brown pin). Source art at `assets/icon/app_icon.png` (full icon) and `app_icon_foreground.png` (transparent, adaptive-icon-safe). Generated via `fvm dart run flutter_launcher_icons` and `fvm dart run flutter_native_splash:create`; config lives in `pubspec.yaml`. Splash background (`#FFFDD0` light / `#2B1B0E` dark) matches the app's scaffold background so splash → first frame has no color flash. Regenerate either by rerunning those two commands after editing the source PNGs or the pubspec config.
 - [x] `lib/core/` scaffolding: constants, theme (colors/typography from `phase_2_ux_design.md`), error handling, routing shell
 - [x] `lib/features/{conflict_reporting,map,weather,onboarding}/` empty layered folders (data/domain/application/presentation) per `phase_2_development_patterns.md` — added `onboarding` too since Track E owns it
 - [x] Riverpod wiring (`flutter_riverpod` + `riverpod_annotation`, `build_runner` configured) — codegen verified working
@@ -75,7 +82,7 @@ Launch once Phase 0 is merged. Each track = one agent in its own git worktree/br
 | **B — Voice/Text Reporting + AI** | `lib/features/conflict_reporting/presentation/widgets/{microphone_button,text_input_modal}`, `.../application/usecases/submit_report.dart`, Firebase AI integration | `record` package capture, `firebase_ai` audio streaming to Gemini 2.5 Flash, text-input fallback path, prompt template that injects location + historical context to produce an A2UI JSON blueprint | Phase 0, Firebase creds |
 | **C — A2UI / GenUI Rendering** | `lib/features/conflict_reporting/presentation/a2ui/**` | `genui` catalog registration for the MVP component set (Workspace, Container, Header, StatusBanner, MapView tie-in, QuickActionBar, ActionButton, TextBlock) per the priority table in `phase_2_ux_design.md`; renders Low/Medium/High/Offline states from a blueprint JSON | Phase 0 |
 | **D — Offline Cache + Share** | `lib/features/conflict_reporting/data/{repositories,datasources/local}`, `share_plus` wiring | Drift `Cache`/`Reports` repository implementations, offline rehydration logic (detect no-network → load last blueprint), `share_plus` pre-filled alert text per UX doc share-sheet copy | Phase 0 |
-| **E — Onboarding + Static Shell Polish** | `lib/features/onboarding/**`, `lib/core/theme/**` | 3-screen onboarding (Welcome → Permissions → Tutorial) per UX Screens 2–4, permission request/denied states, visual polish of the static frame | Phase 0 |
+| **E — Onboarding + Static Shell Polish** | `lib/features/onboarding/**`, `lib/core/theme/**` | 3-screen onboarding (Welcome → Permissions → Tutorial) per UX Screens 2–4 using `carousel_slider_plus` for the swipeable tutorial carousel, permission request/denied states, visual polish of the static frame. App icon/splash are already done (Phase 0) — this track is UI screens only. | Phase 0 |
 
 **Optional Track F (only if a 6th agent-slot is free and weather is in scope)**: `lib/features/weather/**` — Open-Meteo client-side call, inject drought index into the Track B prompt. Treat as stretch; do not let it block the 00:00 checkpoint.
 
@@ -166,7 +173,7 @@ Either way, each track's prompt should pin: the folder it owns, the blueprint JS
 1. Web version / GitHub Pages deployment — drop first, Android APK is the required artifact
 2. Weather (Open-Meteo) context — nice-to-have risk signal, not core loop
 3. Hausa localization, Sentry, Firebase Analytics — defer entirely
-4. Full TDD coverage targets (80% unit/widget) — replace with smoke tests on the 6 non-negotiable MVP behaviors only; there isn't runway for the full test pyramid in `phase_2_development_patterns.md`
+4. Full TDD coverage targets (80% unit/widget) — replace with smoke tests on the 6 non-negotiable MVP behaviors only; there isn't runway for the full test pyramid in `phase_2_development_patterns.md`. Where a track does write tests, use `mocktail` for fakes/mocks and `golden_test` only for the highest-value A2UI risk-state widgets (not every component).
 5. Onboarding polish/animations — reduce to functional 3 screens, skip transitions
 6. Multiple risk states — if truly squeezed, ship Low/High only and cut Medium/Offline-specific styling (keep offline *functionality*, just reuse the last-rendered styling)
 

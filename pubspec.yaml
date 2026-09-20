@@ -54,6 +54,9 @@ dependencies:
   logger: 2.8.0
   skeletonizer: 3.0.0
 
+  # --- Onboarding carousel (Track E) ---
+  carousel_slider_plus: 7.1.2
+
   # --- Offline relational cache ---
   drift: 2.35.0
   path_provider: 2.1.6
@@ -84,7 +87,10 @@ dev_dependencies:
   drift_dev: 2.35.0
   riverpod_generator: 4.0.9
   build_runner: 2.16.1
-  golden_toolkit: ^0.15.0
+  golden_test: 2.0.1
+  mocktail: 1.0.5
+  flutter_launcher_icons: 0.14.4
+  flutter_native_splash: 2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -99,6 +105,7 @@ flutter:
 
   assets:
     - assets/data/farmer_herder_conflict.json
+    - assets/icon/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -125,3 +132,35 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# --- App icon (flutter_launcher_icons) ---
+# Shield + map pin glyph, Material 3 flat style, colors from
+# lib/core/theme/app_colors.dart. Regenerate with:
+#   fvm dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: false # no iOS platform scaffolded for this MVP (Android-first)
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#228B22"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  web:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    background_color: "#228B22"
+    theme_color: "#228B22"
+
+# --- Splash screen (flutter_native_splash) ---
+# Same glyph/background family as the app icon so splash → first frame is
+# seamless. Regenerate with:
+#   fvm dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#FFFDD0"
+  color_dark: "#2B1B0E"
+  image: assets/icon/app_icon_foreground.png
+  image_dark: assets/icon/app_icon_foreground.png
+  android_12:
+    image: assets/icon/app_icon_foreground.png
+    icon_background_color: "#FFFDD0"
+    image_dark: assets/icon/app_icon_foreground.png
+    icon_background_color_dark: "#2B1B0E"
+  web: false
