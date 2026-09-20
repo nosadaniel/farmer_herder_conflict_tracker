@@ -96,19 +96,25 @@ Launch once Phase 0 is merged. Each track = one agent in its own git worktree/br
 
 ### Phase 2 — Integration (serial)
 
-**Architecture for this phase** (confirmed against `riverpod-3.4.3` source, `lib/src/core/base_ref.dart`): `Ref` exposes `onDispose(cb)`, `keepAlive()`, `onCancel(cb)`, `onResume(cb)` — a full lifecycle hook set, so Riverpod can own *any* Dart object (`TextEditingController`, `AudioRecorder`, `CarouselSliderController`, stream subscriptions), not just app-level business state. Phase 2 converts every Phase-1 `StatefulWidget`/`ConsumerStatefulWidget` to a pure `ConsumerWidget` on this basis — screens become `ref.watch(...)` → render, all imperative logic/object lifecycle moves into Notifiers:
+**Architecture for this phase** (confirmed against `riverpod-3.4.3` source, `lib/src/core/base_ref.dart`): `Ref` exposes `onDispose(cb)`, `keepAlive()`, `onCancel(cb)`, `onResume(cb)` — a full lifecycle hook set, so Riverpod *can* own any Dart object's lifecycle, not just app-level business state.
 
-| Widget | Current local state | Becomes |
+**Refined rule** (your call): that capability doesn't mean it *should*. A UI-owned controller object — `TextEditingController`, `AudioRecorder`, `CarouselSliderController`, and similar — stays in the widget's own `State` so its `dispose()` is tied to the widget's own mount/unmount, which is simpler and safer than replicating that lifecycle through `ref.onDispose`. Everything that *isn't* a UI-owned controller object — cross-cutting business state, anything another widget needs to observe, anything mirroring a stream from elsewhere — is Riverpod's job.
+
+Applying that rule to what Phase 1 actually built:
+
+| Widget | Local state | Verdict |
 |---|---|---|
-| `MicrophoneButton` | `AudioRecorder`, `_isRecording`, timer | Folded into a new `ReportSubmissionController` (see below) — owns the recorder via `ref.onDispose`, exposes idle/recording/error state |
-| `TextInputModal` | `TextEditingController`, `_errorText` | A provider owns the controller (`ref.onDispose(controller.dispose)`); validation state in a small Notifier |
-| `A2uiSurfaceView` | `_error`, manual `StreamSubscription` | A derived provider mirrors `conversationProvider`'s events via `ref.listen`/`ref.onDispose` — no manual subscription in the widget |
-| `TutorialScreen` | `CarouselSliderController`, `_currentIndex` | Small `TutorialController` Notifier |
-| `PermissionsScreen` | `_requesting`, `_requested` | `AsyncNotifier` exposing loading/data/error via `AsyncValue` |
-| `OnboardingFlow` | `_checkingStatus`, `_step` | Folded into the existing `OnboardingController` (Track E already made this `@riverpod`) |
+| `MicrophoneButton` | `AudioRecorder`, `_isRecording`, timer | **Unchanged** — `AudioRecorder` is a UI-owned hardware controller; stays local per the refined rule. Only its `onRecordingComplete(bytes)` callback gets wired (at the call site) to `ReportSubmissionController.submitVoice` |
+| `TextInputModal` | `TextEditingController`, `_errorText` | **Unchanged** — same reasoning. Its `Navigator.pop(text)` return value gets wired at the call site to `ReportSubmissionController.submitText` |
+| `TutorialScreen` | `CarouselSliderController`, `_currentIndex` | **Unchanged** — same reasoning, plus it's already tested and not on the critical path |
+| `PermissionsScreen` | `_requesting`, `_requested` | **Unchanged** — plain ephemeral UI feedback, nothing else observes it, already tested |
+| `OnboardingFlow` | `_checkingStatus`, `_step` | **Unchanged** — private navigation-within-a-flow state, already tested |
+| `A2uiSurfaceView` | `_error`, manual `StreamSubscription<ConversationEvent>` | **Converts** to `ConsumerWidget` — this *is* business state (conversation error), manually mirrored from a stream Riverpod already owns (`conversationProvider`). Becomes a derived `conversationErrorProvider` |
+
+Net effect: only `A2uiSurfaceView` actually changes. Everything else Phase 1 built was already correctly scoped once the UI-owned-controller exception is applied — no rewrite needed, just wiring.
 
 One agent, after all Phase 1 branches are merged:
-- [ ] New `ReportSubmissionController` (`@riverpod` Notifier): owns the end-to-end report lifecycle (idle → recording → transcribing → generating → rendered/error), wraps Track B's `SubmitReport`, injects Track A's real `getNearbyConflicts`/location providers (replacing the placeholder params Track B was built against), and pushes the resulting stream into Track C's `conversationProvider` transport seam (the `a2uiSendHandlerProvider` override Track C built specifically for this)
+- [ ] New `ReportSubmissionController` (`@riverpod` Notifier): owns the end-to-end report-submission lifecycle (idle → processing → rendered/failed — *not* the recording UI state, that stays in `MicrophoneButton`), wraps Track B's `SubmitReport`, injects Track A's real `getNearbyConflicts`/location providers (replacing the placeholder params Track B was built against), and pushes the resulting stream into Track C's `conversationProvider` transport seam. The real `a2uiSendHandlerProvider` implementation (button-tap follow-ups + `share_alert` interception) is wired via a `ProviderScope` override at the app root, not by editing `a2ui_providers.dart` directly, to avoid a circular import between the two files
 - [ ] Convert the six stateful widgets per the table above
 - [ ] Wire the real end-to-end flow: GPS → risk context → mic/text → Firebase AI → blueprint → GenUI render → Drift cache write → Share
 - [ ] Resolve provider wiring conflicts (multiple tracks will have added Riverpod providers independently)
