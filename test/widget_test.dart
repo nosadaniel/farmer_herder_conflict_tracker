@@ -2,7 +2,6 @@ import 'package:drift/native.dart';
 import 'package:farmer_herder_conflict_tracker/core/database/app_database.dart';
 import 'package:farmer_herder_conflict_tracker/core/database/database_provider.dart';
 import 'package:farmer_herder_conflict_tracker/main.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,8 +24,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Fresh in-memory DB -> no "has_onboarded" flag -> the root router
-    // (lib/main.dart's _RootRouter) shows onboarding, not the main shell.
+    // Fresh in-memory DB -> no "has_onboarded" flag -> appRouterProvider's
+    // redirect (lib/app/routing/app_router.dart) sends us to /onboarding,
+    // not the main shell.
     expect(find.text('Welcome to Conflict Tracker'), findsOneWidget);
   });
 }

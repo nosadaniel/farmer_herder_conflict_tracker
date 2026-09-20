@@ -68,6 +68,9 @@ dependencies:
   flutter_riverpod: 3.4.3
   riverpod_annotation: 4.0.7
 
+  # --- Routing ---
+  go_router: 18.0.1
+
   # --- Monitoring & analytics ---
   sentry_flutter: 9.30.0
   firebase_analytics: 12.6.0
