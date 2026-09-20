@@ -7,12 +7,28 @@ name: Build & Test (reusable)
 # elsewhere; add new checks here once and every caller gets them for free.
 on:
   workflow_call:
+    secrets:
+      GOOGLE_SERVICES_JSON_B64:
+        required: true
+      FIREBASE_OPTIONS_DART_B64:
+        required: true
+      FIREBASE_JSON_B64:
+        required: true
 
 jobs:
   build_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # main.dart imports firebase_options.dart directly, so this has to run
+      # before anything that touches Dart source (analyze/test/build) — not
+      # just before the Android build step.
+      - uses: ./.github/actions/restore-firebase-config
+        with:
+          google_services_json_b64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
+          firebase_options_dart_b64: ${{ secrets.FIREBASE_OPTIONS_DART_B64 }}
+          firebase_json_b64: ${{ secrets.FIREBASE_JSON_B64 }}
 
       - uses: ./.github/actions/setup-flutter
 

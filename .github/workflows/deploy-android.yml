@@ -10,12 +10,19 @@ on:
 jobs:
   gate:
     uses: ./.github/workflows/_build_test.yml
+    secrets: inherit
 
   deploy:
     needs: gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/restore-firebase-config
+        with:
+          google_services_json_b64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
+          firebase_options_dart_b64: ${{ secrets.FIREBASE_OPTIONS_DART_B64 }}
+          firebase_json_b64: ${{ secrets.FIREBASE_JSON_B64 }}
 
       - uses: ./.github/actions/setup-flutter
 

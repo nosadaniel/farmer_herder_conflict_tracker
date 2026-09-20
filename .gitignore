@@ -49,11 +49,14 @@ app.*.map.json
 # Web related
 web/favicon.png.dart_tool/
 
-# Firebase config — do not commit the real one; drop your project's copy locally
-# (kept out of git since it's environment-specific for this hackathon build)
+# Firebase config — kept out of the (public) repo. CI reconstructs these from
+# GitHub Actions secrets via .github/actions/restore-firebase-config before
+# building (see task.md "CI/CD Pipeline"). For local dev, `flutterfire
+# configure` regenerates them, or copy them from a teammate/1Password/etc.
 **/google-services.json
 **/GoogleService-Info.plist
 lib/firebase_options.dart
+firebase.json
 
 # Android signing
 key.properties

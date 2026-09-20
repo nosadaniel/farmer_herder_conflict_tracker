@@ -1,0 +1,34 @@
+name: Restore Firebase config
+description: >
+  Single source of truth for "write the gitignored Firebase config files back
+  to disk from GitHub secrets." These files (google-services.json,
+  firebase_options.dart, firebase.json) are deliberately NOT committed — this
+  is a public hackathon repo and we keep the live Firebase project's
+  identifiers out of it. Reused by _build_test.yml (every analyze/test/build
+  needs firebase_options.dart to even compile) and both deploy jobs. Must run
+  before the setup-flutter composite action's `flutter pub get`... actually
+  before any `flutter analyze`/`test`/`build` step, since main.dart imports
+  firebase_options.dart directly.
+
+inputs:
+  google_services_json_b64:
+    required: true
+    description: base64 of android/app/google-services.json
+  firebase_options_dart_b64:
+    required: true
+    description: base64 of lib/firebase_options.dart
+  firebase_json_b64:
+    required: true
+    description: base64 of firebase.json (repo root)
+
+runs:
+  using: composite
+  steps:
+    - name: Write google-services.json, firebase_options.dart, firebase.json
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p android/app lib
+        echo "${{ inputs.google_services_json_b64 }}" | base64 --decode > android/app/google-services.json
+        echo "${{ inputs.firebase_options_dart_b64 }}" | base64 --decode > lib/firebase_options.dart
+        echo "${{ inputs.firebase_json_b64 }}" | base64 --decode > firebase.json
