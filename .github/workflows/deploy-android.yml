@@ -24,19 +24,22 @@ jobs:
           firebase_options_dart_b64: ${{ secrets.FIREBASE_OPTIONS_DART_B64 }}
           firebase_json_b64: ${{ secrets.FIREBASE_JSON_B64 }}
 
+      - uses: ./.github/actions/restore-android-signing
+        with:
+          keystore_jks_b64: ${{ secrets.ANDROID_KEYSTORE_JKS_B64 }}
+          key_properties_b64: ${{ secrets.ANDROID_KEY_PROPERTIES_B64 }}
+
       - uses: ./.github/actions/setup-flutter
 
       - name: Generate code (Drift/Riverpod)
         run: dart run build_runner build --delete-conflicting-outputs
 
-      # Debug build by default — switch to `flutter build apk --release`
-      # once release signing (key.properties) is set up.
-      - run: flutter build apk --debug
+      - run: flutter build apk --release
 
       - name: Upload to Firebase App Distribution
         uses: wu-vincent/firebase-app-distribution-github-action@v4
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          file: build/app/outputs/flutter-apk/app-debug.apk
+          file: build/app/outputs/flutter-apk/app-release.apk
           groups: testers

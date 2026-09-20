@@ -1,0 +1,26 @@
+name: Restore Android signing
+description: >
+  Writes the release keystore (.jks) and android/key.properties from base64
+  GitHub secrets so `flutter build apk --release` produces a real signed
+  build instead of falling back to debug signing (see the
+  hasReleaseSigning check in android/app/build.gradle.kts). Only used by
+  deploy-android.yml — the ci.yml build/test gate stays on the debug build
+  and never needs this.
+
+inputs:
+  keystore_jks_b64:
+    required: true
+    description: base64 of the .jks keystore file
+  key_properties_b64:
+    required: true
+    description: base64 of android/key.properties (storePassword/keyPassword/keyAlias/storeFile)
+
+runs:
+  using: composite
+  steps:
+    - name: Write keystore + key.properties
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "${{ inputs.keystore_jks_b64 }}" | base64 --decode > android/app/upload-keystore.jks
+        echo "${{ inputs.key_properties_b64 }}" | base64 --decode > android/key.properties

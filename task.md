@@ -118,21 +118,22 @@ Can run partly in parallel with late Phase 3 polish:
 
 Purpose: catch integration breaks continuously during Phase 1's parallel merges, then give Phase 3/4 a one-click way to ship both required artifacts (Android APK, and web only if it survives the cut list) — without duplicating the "how do we get a working Flutter environment" and "what counts as passing" logic three times over.
 
-**Three shared building blocks, used by everything else — define once, reuse everywhere:**
+**Four shared building blocks, used by everything else — define once, reuse everywhere:**
 
 1. **`.github/actions/setup-flutter/action.yml`** (composite action) — the single source of truth for "set up the pinned Flutter SDK and fetch deps." Reads the version from the committed `.fvmrc` (via `kuhnroyal/flutter-fvm-config-action@v3`) and feeds it to `subosito/flutter-action@v2` with caching enabled, then runs `flutter pub get`. Every workflow below calls this instead of re-declaring setup steps.
 2. **`.github/actions/restore-firebase-config/action.yml`** (composite action) — writes `android/app/google-services.json`, `lib/firebase_options.dart`, and `firebase.json` from base64-encoded GitHub secrets. These three files are **gitignored, not committed** — this is a public hackathon repo and we're keeping the live Firebase project's identifiers out of it, at the cost of needing this restore step everywhere they're needed. Must run before any `flutter analyze`/`test`/`build` step (not just the Android build step) since `main.dart` imports `firebase_options.dart` directly.
-3. **`.github/workflows/_build_test.yml`** (reusable workflow, `on: workflow_call`) — the single source of truth for "does this build pass." Restores the Firebase config, sets up Flutter, then `flutter analyze` → `flutter test` → `flutter build apk --debug` (sanity build). Declares the three secrets it needs via `on.workflow_call.secrets`; callers pass `secrets: inherit` rather than re-listing each one. Any workflow can gate on this by calling it as a job via `uses: ./.github/workflows/_build_test.yml` with `secrets: inherit`, instead of re-declaring analyze/test/build steps.
+3. **`.github/actions/restore-android-signing/action.yml`** (composite action) — writes the release keystore (`android/app/upload-keystore.jks`) and `android/key.properties` from base64 GitHub secrets. Only used by `deploy-android.yml`'s deploy job — `ci.yml`'s debug-only gate never touches this. `android/app/build.gradle.kts` falls back to debug signing when `key.properties` is absent (verified locally), so nothing breaks for tracks building debug without these secrets.
+4. **`.github/workflows/_build_test.yml`** (reusable workflow, `on: workflow_call`) — the single source of truth for "does this build pass." Restores the Firebase config, sets up Flutter, then `flutter analyze` → `flutter test` → `flutter build apk --debug` (sanity build, debug signing, no release keystore needed). Declares the three Firebase secrets it needs via `on.workflow_call.secrets`; callers pass `secrets: inherit` rather than re-listing each one. Any workflow can gate on this by calling it as a job via `uses: ./.github/workflows/_build_test.yml` with `secrets: inherit`, instead of re-declaring analyze/test/build steps.
 
 **Three thin workflows compose those blocks — none of them re-implement setup, secret-restoration, or the test gate:**
 
 | Workflow | Trigger | Does |
 |---|---|---|
 | `ci.yml` | every push + PR to `main` | Just calls `_build_test.yml` with `secrets: inherit`. This is what must be live from Phase 0 — it's what tells you a Phase 1 track's merge broke something. |
-| `deploy-android.yml` | `workflow_dispatch` (manual) — you trigger it deliberately at the 00:00 checkpoint and again before 18:00 if there's a later build | Job 1: calls `_build_test.yml` as a gate (`secrets: inherit`). Job 2 (needs job 1): `restore-firebase-config` → `setup-flutter` → `flutter build apk --release` (or `--debug` if release signing isn't ready) → upload to Firebase App Distribution via `wu-vincent/firebase-app-distribution-github-action`. |
+| `deploy-android.yml` | `workflow_dispatch` (manual) — you trigger it deliberately at the 00:00 checkpoint and again before 18:00 if there's a later build | Job 1: calls `_build_test.yml` as a gate (`secrets: inherit`). Job 2 (needs job 1): `restore-firebase-config` → `restore-android-signing` → `setup-flutter` → `flutter build apk --release` (real signed build) → upload to Firebase App Distribution via `wu-vincent/firebase-app-distribution-github-action`. |
 | `deploy-web.yml` | `workflow_dispatch` (manual), **only wired up if web isn't cut** | Same pattern: gate on `_build_test.yml`, then `restore-firebase-config` → `setup-flutter` → `flutter build web --release` → publish `build/web` to the `gh-pages` branch (`peaceiris/actions-gh-pages@v4`). |
 
-Net effect: the Flutter-setup logic exists in exactly one place, the Firebase-config-restore logic exists in exactly one place, the test/build gate exists in exactly one place, and both deploy workflows reuse the same gate `ci.yml` runs on every push — so a manual deploy can never ship something that hasn't already passed the same checks as a normal commit.
+Net effect: the Flutter-setup logic exists in exactly one place, the Firebase-config-restore logic exists in exactly one place, the Android-signing-restore logic exists in exactly one place, the test/build gate exists in exactly one place, and both deploy workflows reuse the same gate `ci.yml` runs on every push — so a manual deploy can never ship something that hasn't already passed the same checks as a normal commit.
 
 **Deploy jobs stay manual-trigger, not automatic on push** — during Phase 1 the repo will get many WIP pushes from parallel tracks; auto-deploying on every push would either spam Firebase App Distribution testers or fail loudly on incomplete branches. You decide when a build is worth shipping.
 
@@ -142,9 +143,38 @@ Net effect: the Flutter-setup logic exists in exactly one place, the Firebase-co
 - `GOOGLE_SERVICES_JSON_B64` — `base64 -i android/app/google-services.json | pbcopy` (macOS) after `flutterfire configure` has generated it locally, then paste
 - `FIREBASE_OPTIONS_DART_B64` — same idea: `base64 -i lib/firebase_options.dart | pbcopy`
 - `FIREBASE_JSON_B64` — `base64 -i firebase.json | pbcopy`
+- `ANDROID_KEYSTORE_JKS_B64` — `base64 -i android/app/upload-keystore.jks | pbcopy` (see "Android release signing" below for how to generate the keystore first)
+- `ANDROID_KEY_PROPERTIES_B64` — `base64 -i android/key.properties | pbcopy`
 - `FIREBASE_APP_ID` — Android app ID from the Firebase console
 - `FIREBASE_SERVICE_ACCOUNT_JSON` (or `FIREBASE_TOKEN`) — credential for the App Distribution upload step
 - GitHub Pages: repo Settings → Pages → source set to the `gh-pages` branch (or the Pages environment if using `actions/deploy-pages`) — one-time setup, only needed if web isn't cut
+
+---
+
+## Android release signing
+
+`android/app/build.gradle.kts` reads `android/key.properties` (gitignored) and falls back to debug signing when it's absent — verified locally, so this is safe to set up whenever you have a spare few minutes, no rush relative to Phase 1.
+
+**1. Generate the keystore yourself** (run this in your own terminal, not delegated — you should be the one typing/owning the passwords):
+```bash
+keytool -genkey -v -keystore android/app/upload-keystore.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+It'll prompt for a keystore password, your name/org (cosmetic, doesn't matter for a hackathon), and a key password (can reuse the keystore password when prompted). `android/app/upload-keystore.jks` is already gitignored (`*.jks`).
+
+**2. Create `android/key.properties`** (also gitignored) pointing at it:
+```properties
+storePassword=<the password you set>
+keyPassword=<the password you set>
+keyAlias=upload
+storeFile=upload-keystore.jks
+```
+
+**3. Verify locally**: `fvm flutter build apk --release` should now produce a real signed release APK (check the build log doesn't fall back to debug signing).
+
+**4. Base64-encode both for GitHub secrets** (see the secrets list above): `base64 -i android/app/upload-keystore.jks | pbcopy` → paste as `ANDROID_KEYSTORE_JKS_B64`; same for `android/key.properties` → `ANDROID_KEY_PROPERTIES_B64`.
+
+**Keep the `.jks` file and passwords somewhere durable outside git** (password manager, etc.) — if you lose them, you can't update this app under the same signing identity later. Low-stakes for a one-off hackathon submission, but cheap to do right.
 
 ---
 
@@ -155,12 +185,13 @@ These block the plan at specific points — flagged above where relevant:
 2. **Device/emulator access** — install and manually exercise the app during Phase 3 QA (mic permission prompts, GPS prompts, actual voice audio with your accent/environment can't be simulated by an agent).
 3. **GitHub repository** — create it (or grant push access), keep it public, enable Pages later only if the web build stretch goal survives.
 4. **Firebase App Distribution** — set up the tester group / public link, since this requires your Firebase console access.
-5. **CI/CD secrets** — add `GOOGLE_SERVICES_JSON_B64`, `FIREBASE_OPTIONS_DART_B64`, `FIREBASE_JSON_B64`, `FIREBASE_APP_ID`, and `FIREBASE_SERVICE_ACCOUNT_JSON`/`FIREBASE_TOKEN` to GitHub Actions secrets, and enable GitHub Pages in repo settings if web isn't cut. See "CI/CD Pipeline" above.
-6. **Demo video** — record and narrate it. An agent can write the shot list and script; only you can produce the actual screen recording + voice.
-7. **Pitch deck review** — add real team name/branding, sanity-check narrative, since the drafted content is generic.
-8. **Judgment calls agents will flag inline** — e.g., exact risk-level thresholds, color tweaks, prompt-tone decisions. Answer these fast so tracks don't stall.
-9. **Scope-cut decisions** — if a track is running late past a sync point, you decide whether to cut it (see cut list) or extend its budget by pulling time from another track.
-10. **Final submission** — the actual form/link submission on the hackathon platform.
+5. **CI/CD secrets** — add `GOOGLE_SERVICES_JSON_B64`, `FIREBASE_OPTIONS_DART_B64`, `FIREBASE_JSON_B64`, `ANDROID_KEYSTORE_JKS_B64`, `ANDROID_KEY_PROPERTIES_B64`, `FIREBASE_APP_ID`, and `FIREBASE_SERVICE_ACCOUNT_JSON`/`FIREBASE_TOKEN` to GitHub Actions secrets, and enable GitHub Pages in repo settings if web isn't cut. See "CI/CD Pipeline" and "Android release signing" above.
+6. **Generate the Android release keystore** — run the `keytool` command yourself (see "Android release signing"); you should own the passwords, not have an agent generate/see them.
+7. **Demo video** — record and narrate it. An agent can write the shot list and script; only you can produce the actual screen recording + voice.
+8. **Pitch deck review** — add real team name/branding, sanity-check narrative, since the drafted content is generic.
+9. **Judgment calls agents will flag inline** — e.g., exact risk-level thresholds, color tweaks, prompt-tone decisions. Answer these fast so tracks don't stall.
+10. **Scope-cut decisions** — if a track is running late past a sync point, you decide whether to cut it (see cut list) or extend its budget by pulling time from another track.
+11. **Final submission** — the actual form/link submission on the hackathon platform.
 
 ---
 
