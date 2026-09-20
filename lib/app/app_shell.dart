@@ -6,12 +6,17 @@ import '../core/theme/app_colors.dart';
 /// a persistent header + footer wrapping a Dynamic Canvas that Track C
 /// (A2UI/GenUI) owns the contents of. This widget only owns the shell —
 /// it does not know about risk levels, blueprints, or voice/text state.
+///
+/// [footer] is composed by the caller (Phase 2 integration) — originally
+/// this widget rendered its own hardcoded mic button driven by callbacks,
+/// which duplicated Track B's real `MicrophoneButton` (which owns its own
+/// recording UI/`AudioRecorder`). Accepting a `Widget` here instead lets the
+/// caller drop the real `MicrophoneButton` + text-input trigger in directly,
+/// with no duplicate mic-button implementation.
 class AppShell extends StatelessWidget {
   const AppShell({
     required this.dynamicCanvas,
-    required this.onMicPressStart,
-    required this.onMicPressEnd,
-    required this.onTextInputTap,
+    required this.footer,
     this.isOnline = true,
     super.key,
   });
@@ -19,9 +24,10 @@ class AppShell extends StatelessWidget {
   /// The A2UI-rendered content area (Track C fills this in).
   final Widget dynamicCanvas;
 
-  final VoidCallback onMicPressStart;
-  final VoidCallback onMicPressEnd;
-  final VoidCallback onTextInputTap;
+  /// The persistent footer — mic button + text-input trigger, composed by
+  /// the caller.
+  final Widget footer;
+
   final bool isOnline;
 
   @override
@@ -45,27 +51,7 @@ class AppShell extends StatelessWidget {
       bottomNavigationBar: BottomAppBar(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onLongPressStart: (_) => onMicPressStart(),
-                onLongPressEnd: (_) => onMicPressEnd(),
-                child: CircleAvatar(
-                  radius: 32,
-                  backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.mic, color: Colors.white, size: 32),
-                ),
-              ),
-              const SizedBox(width: 24),
-              IconButton(
-                onPressed: onTextInputTap,
-                icon: const Icon(Icons.keyboard),
-                iconSize: 32,
-                tooltip: 'Type your report',
-              ),
-            ],
-          ),
+          child: footer,
         ),
       ),
     );

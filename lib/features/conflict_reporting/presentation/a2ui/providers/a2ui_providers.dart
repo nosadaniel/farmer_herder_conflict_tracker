@@ -20,6 +20,7 @@
 //   action name (contract §7). No interception is implemented here — this
 //   file only guarantees the conversation/events are cleanly exposed for
 //   that to be wired in later.
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genui/genui.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -100,3 +101,23 @@ Conversation conversation(Ref ref) {
   ref.onDispose(conversation.dispose);
   return conversation;
 }
+
+/// Mirrors [conversationProvider]'s error state as a stream: emits the
+/// error object on a `ConversationError` event, and `null` again once fresh
+/// content arrives (`ConversationSurfaceAdded`/`ConversationComponentsUpdated`).
+///
+/// This is business state (not a UI-owned controller), so per task.md's
+/// Phase 2 architecture it's Riverpod's job, not something `A2uiSurfaceView`
+/// should track via a manually-managed `StreamSubscription` in its own
+/// `State` — a plain `StreamProvider` here does the same job.
+final conversationErrorProvider = StreamProvider<Object?>((ref) {
+  final conversation = ref.watch(conversationProvider);
+  return conversation.events
+      .where(
+        (event) =>
+            event is ConversationError ||
+            event is ConversationSurfaceAdded ||
+            event is ConversationComponentsUpdated,
+      )
+      .map((event) => event is ConversationError ? event.error : null);
+});

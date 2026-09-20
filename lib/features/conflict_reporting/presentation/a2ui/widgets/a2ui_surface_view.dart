@@ -11,8 +11,6 @@
 // requirements beyond a `ProviderScope` ancestor (already present at the app
 // root), so it can be dropped directly into `AppShell(dynamicCanvas: ...)`
 // by a later integration step. It does not touch `AppShell` itself.
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genui/genui.dart';
@@ -26,49 +24,25 @@ import '../providers/a2ui_providers.dart';
 /// - loading (`Conversation.state.isWaiting`): a small spinner. Shown
 ///   centered if nothing has rendered yet, or as a small corner indicator
 ///   over the previous screen while a follow-up turn is in flight.
-/// - error (a `ConversationError` event): a simple inline error banner.
-class A2uiSurfaceView extends ConsumerStatefulWidget {
+/// - error (`conversationErrorProvider`, mirroring `ConversationError`
+///   events — see a2ui_providers.dart): a simple inline error banner.
+///
+/// A plain `ConsumerWidget`, not `ConsumerStatefulWidget` — task.md's Phase
+/// 2 architecture: the error state it used to track via a manually-managed
+/// `StreamSubscription` in local `State` is business state Riverpod already
+/// owns (`conversationErrorProvider`), not a UI-owned controller object, so
+/// it belongs in a provider, not here.
+class A2uiSurfaceView extends ConsumerWidget {
   const A2uiSurfaceView({super.key});
 
   @override
-  ConsumerState<A2uiSurfaceView> createState() => _A2uiSurfaceViewState();
-}
-
-class _A2uiSurfaceViewState extends ConsumerState<A2uiSurfaceView> {
-  Object? _error;
-  StreamSubscription<ConversationEvent>? _eventsSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    final conversation = ref.read(conversationProvider);
-    _eventsSubscription = conversation.events.listen(_onEvent);
-  }
-
-  void _onEvent(ConversationEvent event) {
-    if (!mounted) return;
-    if (event is ConversationError) {
-      setState(() => _error = event.error);
-    } else if (event is ConversationSurfaceAdded ||
-        event is ConversationComponentsUpdated) {
-      // Fresh content arrived; clear any previously shown error.
-      if (_error != null) setState(() => _error = null);
-    }
-  }
-
-  @override
-  void dispose() {
-    _eventsSubscription?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final conversation = ref.watch(conversationProvider);
     final controller = ref.watch(a2uiSurfaceControllerProvider);
+    final error = ref.watch(conversationErrorProvider).value;
 
-    if (_error != null) {
-      return _InlineError(error: _error!);
+    if (error != null) {
+      return _InlineError(error: error);
     }
 
     return ValueListenableBuilder<ConversationState>(
