@@ -2,37 +2,33 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "dev Debug",
+            "name": "Debug",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "args": [
-                "--flavor",
-                "dev"
-            ],
-            "program": "apps/geiger_toolbox/lib/main_dev.dart"
+            "program": "lib/main.dart"
         },
         {
-            "name": "dev Profile",
+            "name": "Profile",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile",
-            "args": [
-                "--flavor",
-                "dev"
-            ],
-            "program": "apps/geiger_toolbox/lib/main_dev.dart"
+            "program": "lib/main.dart"
         },
         {
             "name": "Release",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release",
-            "args": [
-                "--flavor",
-                "dev"
-            ],
-            "program": "apps/geiger_toolbox/lib/main_dev.dart"
+            "program": "lib/main.dart"
         },
+        {
+            "name": "Debug (Chrome)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "program": "lib/main.dart",
+            "deviceId": "chrome"
+        }
     ]
 }
