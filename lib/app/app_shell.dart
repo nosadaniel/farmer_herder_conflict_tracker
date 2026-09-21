@@ -46,15 +46,15 @@ class AppShell extends StatelessWidget {
           ),
         ],
       ),
-      // `footer` lives in `body`'s own Column, not a separate
-      // `bottomNavigationBar`/`BottomAppBar` slot — found via on-device
-      // testing (task.md Phase 5) that a `BottomAppBar`-hosted button never
-      // received taps on Android (confirmed via a debugPrint in its
-      // onPressed that never fired, while every other screen's body-Column
-      // button worked reliably), root cause not fully diagnosed under time
-      // pressure but consistently reproducible across two physical/emulator
-      // devices. Matches the same body-Column button placement every other
-      // screen in this app already uses (WelcomeScreen, TutorialScreen).
+      // `footer` lives in `body`'s own Column rather than a separate
+      // `bottomNavigationBar`/`BottomAppBar` slot, matching the button
+      // placement every other screen in this app already uses
+      // (WelcomeScreen, TutorialScreen) — kept for that consistency after
+      // an on-device debugging session (task.md Phase 5) briefly suspected
+      // `BottomAppBar` of swallowing taps; that was ultimately traced to
+      // incorrect manual `adb input tap` coordinates during testing, not a
+      // real defect — see test/widget_test.dart's semantic-finder-based
+      // regression test, which passes against both layouts.
       body: SafeArea(
         child: Column(
           children: [

@@ -15,11 +15,23 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Firebase AI Logic requires App Check — without this, every Gemini call
   // fails with "Firebase App Check token is invalid" (discovered during
-  // Phase 3 device testing; see task.md). AndroidProvider.debug generates a
-  // debug token logged on first run — register it under Firebase Console →
-  // App Check → Manage debug tokens, OR set the Gemini API's App Check
-  // enforcement to "Unenforced" there instead (faster, no token needed) if
-  // you don't need enforcement for the hackathon demo.
+  // Phase 3 device testing; see task.md).
+  //
+  // Android, like web, needs a release-vs-debug split. `AndroidDebugProvider`
+  // (debug/profile builds) generates a random debug token per install,
+  // logged on first run — fine for one developer's own device (register it
+  // under Firebase Console -> App Check -> Manage debug tokens), but
+  // unworkable for a release APK handed to multiple testers via Firebase
+  // App Distribution: every tester's device would mint its own token, none
+  // of them pre-registered, so Gemini calls fail until each one is
+  // manually added. `AndroidPlayIntegrityProvider` (kReleaseMode only) is
+  // Firebase's production provider instead — it verifies any genuine build
+  // signed with the registered release certificate, no per-device token
+  // registration needed. Register the release keystore's SHA-256
+  // fingerprint (`keytool -list -v -keystore android/app/upload-keystore.jks
+  // -alias upload`) under Firebase Console -> App Check -> Apps -> the
+  // Android app -> Play Integrity before a release build's Gemini calls
+  // will succeed.
   //
   // `activate()`'s web provider (ReCaptchaV3Provider) needs a real site key
   // — without one it throws (`Cannot read properties of null (reading
@@ -36,7 +48,9 @@ void main() async {
   // see `.env.example`) — otherwise `null`, so a release web build without
   // a configured key still boots instead of throwing.
   await FirebaseAppCheck.instance.activate(
-    providerAndroid: const AndroidDebugProvider(),
+    providerAndroid: kReleaseMode
+        ? const AndroidPlayIntegrityProvider()
+        : const AndroidDebugProvider(),
     providerWeb: !kIsWeb
         ? null
         : kReleaseMode

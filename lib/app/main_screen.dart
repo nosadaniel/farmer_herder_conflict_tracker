@@ -30,10 +30,7 @@ class MainScreen extends ConsumerWidget {
       footer: SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
-          onPressed: () {
-            debugPrint('>>> Report button onPressed fired');
-            ReportWizardRoute.go(context);
-          },
+          onPressed: () => ReportWizardRoute.go(context),
           icon: const Icon(Icons.campaign_outlined),
           label: const Text('Report'),
           style: ElevatedButton.styleFrom(
