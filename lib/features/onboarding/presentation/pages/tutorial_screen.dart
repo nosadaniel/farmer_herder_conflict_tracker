@@ -17,10 +17,22 @@ class TutorialScreen extends StatefulWidget {
 
 class _TutorialScreenState extends State<TutorialScreen> {
   static const _steps = [
-    TutorialStep(icon: Icons.mic, text: 'Press and hold to report'),
-    TutorialStep(icon: Icons.keyboard, text: 'Or type your report'),
-    TutorialStep(icon: Icons.map, text: 'See threats on the map'),
-    TutorialStep(icon: Icons.share, text: 'Share with your community'),
+    TutorialStep(
+      icon: Icons.mic,
+      text: 'Speak your report — no typing needed',
+    ),
+    TutorialStep(
+      icon: Icons.map,
+      text: 'See real hotspots near you on the map',
+    ),
+    TutorialStep(
+      icon: Icons.campaign,
+      text: 'Warn your neighbors instantly by WhatsApp or SMS',
+    ),
+    TutorialStep(
+      icon: Icons.check_circle,
+      text: "You're ready — let's log your first report",
+    ),
   ];
 
   final CarouselSliderController _carouselController =

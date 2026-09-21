@@ -27,6 +27,6 @@ void main() {
     // Fresh in-memory DB -> no "has_onboarded" flag -> appRouterProvider's
     // redirect (lib/app/routing/app_router.dart) sends us to /onboarding,
     // not the main shell.
-    expect(find.text('Welcome to Conflict Tracker'), findsOneWidget);
+    expect(find.text('Know Before Trouble Arrives'), findsOneWidget);
   });
 }
