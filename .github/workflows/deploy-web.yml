@@ -41,7 +41,17 @@ jobs:
       # No codegen step here — the committed .g.dart files are trusted,
       # and `gate` (this job's dependency) already regenerated + validated
       # freshness before this job runs. See task.md CI/CD notes.
-      - run: flutter build web --release
+      #
+      # --dart-define feeds lib/core/config/env.dart's Env.recaptchaSiteKey,
+      # which main.dart uses to activate Firebase App Check's
+      # ReCaptchaV3Provider on web release builds only (debug/profile web
+      # use WebDebugProvider instead — see main.dart). Without this secret
+      # set, the build still succeeds (Env.hasRecaptchaSiteKey is false, App
+      # Check activation is skipped on web) but every Gemini call from the
+      # deployed site will fail with "Firebase App Check token is invalid."
+      - run: |
+          flutter build web --release \
+            --dart-define=SITE_KEY_RECAPTCHA_SITE_KEY=${{ secrets.RECAPTCHA_SITE_KEY }}
 
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4

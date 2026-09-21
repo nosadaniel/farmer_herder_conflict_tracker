@@ -223,6 +223,7 @@ Net effect: the Flutter-setup logic exists in exactly one place, the Firebase-co
 - `ANDROID_KEY_PROPERTIES_B64` — `base64 -i android/key.properties | pbcopy`
 - `FIREBASE_APP_ID` — Android app ID from the Firebase console
 - `FIREBASE_SERVICE_ACCOUNT_JSON` (or `FIREBASE_TOKEN`) — credential for the App Distribution upload step
+- `RECAPTCHA_SITE_KEY` — Firebase Console → App Check → the web app → reCAPTCHA v3 provider. Web-only; feeds `deploy-web.yml`'s `--dart-define=SITE_KEY_RECAPTCHA_SITE_KEY=...` build arg (`lib/core/config/env.dart`'s `Env.recaptchaSiteKey`), which gates App Check activation on web release builds (see `main.dart`). Only needed if web isn't cut.
 - GitHub Pages: repo Settings → Pages → source set to the `gh-pages` branch (or the Pages environment if using `actions/deploy-pages`) — one-time setup, only needed if web isn't cut
 
 ---
@@ -273,7 +274,7 @@ These block the plan at specific points — flagged above where relevant:
 2. **Device/emulator access** — install and manually exercise the app during Phase 3 QA (mic permission prompts, GPS prompts, actual voice audio with your accent/environment can't be simulated by an agent).
 3. **GitHub repository** — create it (or grant push access), keep it public, enable Pages later only if the web build stretch goal survives.
 4. **Firebase App Distribution** — set up the tester group / public link, since this requires your Firebase console access.
-5. **CI/CD secrets** — add `GOOGLE_SERVICES_JSON_B64`, `FIREBASE_OPTIONS_DART_B64`, `FIREBASE_JSON_B64`, `ANDROID_KEYSTORE_JKS_B64`, `ANDROID_KEY_PROPERTIES_B64`, `FIREBASE_APP_ID`, and `FIREBASE_SERVICE_ACCOUNT_JSON`/`FIREBASE_TOKEN` to GitHub Actions secrets, and enable GitHub Pages in repo settings if web isn't cut. See "CI/CD Pipeline" and "Android release signing" above.
+5. **CI/CD secrets** — add `GOOGLE_SERVICES_JSON_B64`, `FIREBASE_OPTIONS_DART_B64`, `FIREBASE_JSON_B64`, `ANDROID_KEYSTORE_JKS_B64`, `ANDROID_KEY_PROPERTIES_B64`, `FIREBASE_APP_ID`, `FIREBASE_SERVICE_ACCOUNT_JSON`/`FIREBASE_TOKEN`, and (web only) `RECAPTCHA_SITE_KEY`, to GitHub Actions secrets, and enable GitHub Pages in repo settings if web isn't cut. See "CI/CD Pipeline" and "Android release signing" above.
 6. **Generate the Android release keystore** — run the `keytool` command yourself (see "Android release signing"); you should own the passwords, not have an agent generate/see them.
 7. **Demo video** — record and narrate it. An agent can write the shot list and script; only you can produce the actual screen recording + voice.
 8. **Pitch deck review** — add real team name/branding, sanity-check narrative, since the drafted content is generic.
@@ -281,6 +282,7 @@ These block the plan at specific points — flagged above where relevant:
 10. **Scope-cut decisions** — if a track is running late past a sync point, you decide whether to cut it (see cut list) or extend its budget by pulling time from another track.
 11. **Final submission** — the actual form/link submission on the hackathon platform.
 12. **GitHub Environments for reviewed deployments** — create `android-production` and `web-production` in Settings → Environments and add yourself (and any teammates) as required reviewers. Deliberately **not done yet** — do this *after* tonight's 11:46 PM submission, not before, so `push`-triggered deploys keep shipping immediately without waiting on an approval click while the deadline is live. See "CI/CD redesign" above.
+13. **`dev` branch — push it, then protect `main`** — a local `dev` branch has been created (from the same commit `main` is currently at). Push it: `git push -u origin dev`. Then, in Settings → Branches, add a protection rule for `main` requiring a pull request (with at least one approval) before merging — this is what makes "merge `dev` into `main`" the actual manual-review step `ci.yml`/the deploy workflows now assume exists. Cannot be done by an agent (no authenticated `gh` session in this environment); do it via the GitHub web UI.
 
 ---
 
