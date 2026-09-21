@@ -6,6 +6,10 @@
 **Status**: Working proof of concept
 **Submission Date**: September 21, 2026
 
+### 📲 [Install the Android app via Firebase App Distribution](https://appdistribution.firebase.dev/i/9fd9cdc659c86666)
+
+Or try it in the browser: **[nosadaniel.github.io/farmer_herder_conflict_tracker](https://nosadaniel.github.io/farmer_herder_conflict_tracker/)**
+
 ---
 
 ## 📌 Problem
@@ -33,8 +37,8 @@ Historical conflict records come from the [UCDP Georeferenced Event Dataset](htt
 
 ## 📱 Platforms
 
-- **Android**: [Install via Firebase App Distribution](https://appdistribution.firebase.dev/i/9fd9cdc659c86666)
-- **Web**: stretch goal — see `docs/a2ui_gemini_contract.md` / `task.md` for current status
+- **Android**: [Install via Firebase App Distribution](https://appdistribution.firebase.dev/i/9fd9cdc659c86666) — the primary, fully-featured build
+- **Web**: [nosadaniel.github.io/farmer_herder_conflict_tracker](https://nosadaniel.github.io/farmer_herder_conflict_tracker/) — stretch goal, live
 
 ## 🛠️ Tech Stack
 
@@ -68,9 +72,6 @@ Feature-based layering (`lib/features/<feature>/{data,domain,application,present
 Key design docs:
 - `docs/a2ui_gemini_contract.md` — the frozen A2UI/Gemini contract for the report-generation surface
 - `docs/report_wizard_ux_flow.md` / `docs/refactor.md` — the Guided Report Wizard's UX spec and GenUI implementation guide
-
-## 🎥 Demo Video
-
 
 ## 📊 Pitch Deck
 
