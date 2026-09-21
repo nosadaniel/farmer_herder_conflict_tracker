@@ -246,7 +246,14 @@ class ReportWizardController extends _$ReportWizardController {
   /// `state.showStatePicker`.
   void resolveStateLocation(String stateName) {
     final coords = reportWizardStateCentroids[stateName];
-    if (coords == null) return;
+    if (coords == null) {
+      _log.w('resolveStateLocation called with unknown state "$stateName"');
+      return;
+    }
+    _log.i(
+      'Step 1: state picker resolved to $stateName '
+      '(${coords.$1}, ${coords.$2})',
+    );
     _applyLocation(
       lat: coords.$1,
       lng: coords.$2,
@@ -404,6 +411,7 @@ class ReportWizardController extends _$ReportWizardController {
   void _onBindingValueChanged(WizardBinding binding, Object? rawValue) {
     final String? value = _extractSingleString(rawValue);
     if (value == null || value.isEmpty) return;
+    _log.d('DataModel write at ${binding.path}: $rawValue -> "$value"');
 
     if (binding.path == ReportWizardStep.where.bindings.single.path) {
       if (value == _useCurrentLocationOption) {
@@ -414,6 +422,10 @@ class ReportWizardController extends _$ReportWizardController {
         state = state.copyWith(showStatePicker: true);
         return;
       }
+      // Gemini's `where.rules` only offers those two exact ChoicePicker
+      // options — landing here means it emitted something else, which is
+      // worth knowing about even though we still record it as an answer.
+      _log.w('Unexpected /report/location value from Gemini: "$value"');
     }
 
     if (state.answers[binding.key] == value) return;
@@ -430,8 +442,10 @@ class ReportWizardController extends _$ReportWizardController {
   }
 
   Future<void> _resolveCurrentLocation() async {
+    _log.i('Step 1: "Use my current location" selected, requesting permission');
     final granted = await requestLocationPermission();
     if (!granted) {
+      _log.w('Location permission denied — falling back to Middle Belt centroid');
       _applyLocation(
         lat: _middleBeltFallback.$1,
         lng: _middleBeltFallback.$2,
@@ -446,12 +460,14 @@ class ReportWizardController extends _$ReportWizardController {
           timeLimit: Duration(seconds: 15),
         ),
       );
+      _log.i('Resolved GPS: (${position.latitude}, ${position.longitude})');
       _applyLocation(
         lat: position.latitude,
         lng: position.longitude,
         placeName: 'My current location',
       );
-    } catch (_) {
+    } catch (e, st) {
+      _log.e('Geolocator.getCurrentPosition failed — falling back to Middle Belt centroid', error: e, stackTrace: st);
       _applyLocation(
         lat: _middleBeltFallback.$1,
         lng: _middleBeltFallback.$2,

@@ -11,9 +11,12 @@ import 'dart:async';
 
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:genui/genui.dart';
+import 'package:logger/logger.dart';
 
 import '../../conflict_reporting/data/datasources/remote/gemini_remote_datasource.dart'
     show GeminiRemoteDataSource;
+
+final _log = Logger();
 
 /// The minimal seam [ReportWizardController] (presentation/providers) depends
 /// on, rather than the concrete [ReportWizardSession] directly.
@@ -85,10 +88,21 @@ class ReportWizardSession implements WizardSession {
   /// `TextPart`s — see `genai_primitives`' `chat_message.dart`), so no
   /// custom part-by-part converter is needed here.
   Future<void> _sendToGemini(ChatMessage message) async {
-    await for (final chunk in _model.generateContentStream([
-      Content.text(message.text),
-    ])) {
-      if (chunk.text case final text?) transport.addChunk(text);
+    _log.i('Wizard session calling Gemini (${message.text.length} chars sent)');
+    try {
+      var totalChars = 0;
+      await for (final chunk in _model.generateContentStream([
+        Content.text(message.text),
+      ])) {
+        if (chunk.text case final text?) {
+          totalChars += text.length;
+          transport.addChunk(text);
+        }
+      }
+      _log.i('Wizard session Gemini stream complete ($totalChars total chars)');
+    } catch (e, st) {
+      _log.e('Wizard session Gemini call failed', error: e, stackTrace: st);
+      rethrow;
     }
   }
 
