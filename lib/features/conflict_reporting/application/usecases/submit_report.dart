@@ -13,8 +13,8 @@ import '../../data/datasources/remote/gemini_remote_datasource.dart';
 
 /// Input for [SubmitReport.call].
 ///
-/// Exactly one of [audioBytes], [reportText], or [actionEventName] must be
-/// provided:
+/// Exactly one of [audioBytes], [reportText], [actionEventName], or
+/// [wizardAnswers] must be provided:
 /// - [audioBytes] set → voice mode: transcribed first (contract §4 step 1),
 ///   then the transcript is used as the report text.
 /// - [reportText] set (and [audioBytes] null) → text mode: skips
@@ -22,6 +22,9 @@ import '../../data/datasources/remote/gemini_remote_datasource.dart';
 ///   transcription needed").
 /// - [actionEventName] set → button-tap follow-up from a previously
 ///   rendered A2UI surface; [actionContext] carries the event's payload.
+/// - [wizardAnswers] set → guided Report Wizard mode: structured answers
+///   instead of freeform voice/text, assembled by
+///   [ConflictContextBuilder.build] into the same `Report:` line shape.
 class SubmitReportParams {
   const SubmitReportParams({
     required this.lat,
@@ -33,31 +36,41 @@ class SubmitReportParams {
     this.reportText,
     this.actionEventName,
     this.actionContext,
+    this.wizardAnswers,
   }) : assert(
          (audioBytes != null ? 1 : 0) +
                  (reportText != null ? 1 : 0) +
-                 (actionEventName != null ? 1 : 0) ==
+                 (actionEventName != null ? 1 : 0) +
+                 (wizardAnswers != null ? 1 : 0) ==
              1,
-         'Provide exactly one of audioBytes, reportText, or actionEventName',
+         'Provide exactly one of audioBytes, reportText, actionEventName, '
+         'or wizardAnswers',
        );
 
   final double lat;
   final double lng;
   final String? placeName;
 
-  /// Recorded voice-report audio (voice mode). When set, [reportText] and
-  /// [actionEventName] must be null.
+  /// Recorded voice-report audio (voice mode). When set, [reportText],
+  /// [actionEventName], and [wizardAnswers] must be null.
   final Uint8List? audioBytes;
   final String audioMimeType;
 
   /// Typed text report (text mode, skips transcription). When set,
-  /// [audioBytes] and [actionEventName] must be null.
+  /// [audioBytes], [actionEventName], and [wizardAnswers] must be null.
   final String? reportText;
 
   /// Button-tap follow-up event name from a previously rendered surface.
-  /// When set, [audioBytes] and [reportText] must be null.
+  /// When set, [audioBytes], [reportText], and [wizardAnswers] must be null.
   final String? actionEventName;
   final Map<String, dynamic>? actionContext;
+
+  /// Structured answers from the guided Report Wizard
+  /// (`whatsHappening`/`whoInvolved`/`detailText`, any subset). When set,
+  /// [audioBytes], [reportText], and [actionEventName] must be null. See
+  /// [ConflictContextBuilder.build]'s `wizardAnswers` doc for the expected
+  /// keys.
+  final Map<String, String>? wizardAnswers;
 
   /// Injected lookup for nearby historical conflicts — see
   /// [ConflictContextBuilder.build] for the expected map shape. Owned by a
@@ -115,6 +128,7 @@ class SubmitReport {
       reportText: params.actionEventName == null ? reportText : null,
       actionEventName: params.actionEventName,
       actionContext: params.actionContext,
+      wizardAnswers: params.wizardAnswers,
       getNearbyConflicts: params.getNearbyConflicts,
     );
 

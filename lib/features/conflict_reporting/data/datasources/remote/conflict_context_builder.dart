@@ -22,12 +22,17 @@ class ConflictContextBuilder {
 
   /// Builds the context block text.
   ///
-  /// Exactly one of [reportText] or [actionEventName] should be provided:
+  /// Exactly one of [reportText], [actionEventName], or [wizardAnswers]
+  /// should be provided:
   /// - [reportText]: a fresh voice (already transcribed by
   ///   `GeminiRemoteDataSource.transcribeAudio`) or typed text report.
   /// - [actionEventName] (+ optional [actionContext]): a button-tap
   ///   follow-up from a previously rendered surface (the raw A2UI action
   ///   event Gemini invented on an earlier turn).
+  /// - [wizardAnswers]: structured answers collected by the guided Report
+  ///   Wizard (`whatsHappening`/`whoInvolved`/`detailText`, any subset all
+  ///   optional) — assembled into the same `Report:` line shape as
+  ///   [reportText] would produce, via [_buildWizardReportLine].
   ///
   /// [surfaceId] must be generated client-side by the caller (contract §4:
   /// `'report_${DateTime.now().millisecondsSinceEpoch}'`) — this builder
@@ -42,10 +47,14 @@ class ConflictContextBuilder {
     String? reportText,
     String? actionEventName,
     Map<String, dynamic>? actionContext,
+    Map<String, String>? wizardAnswers,
   }) async {
     assert(
-      (reportText != null) != (actionEventName != null),
-      'Provide exactly one of reportText or actionEventName',
+      (reportText != null ? 1 : 0) +
+              (actionEventName != null ? 1 : 0) +
+              (wizardAnswers != null ? 1 : 0) ==
+          1,
+      'Provide exactly one of reportText, actionEventName, or wizardAnswers',
     );
 
     final conflicts = await getNearbyConflicts(lat, lng);
@@ -63,6 +72,8 @@ class ConflictContextBuilder {
         'User tapped: "$actionEventName" '
         '(context: ${jsonEncode(actionContext ?? const <String, dynamic>{})})',
       );
+    } else if (wizardAnswers != null) {
+      buffer.writeln('Report: "${_buildWizardReportLine(wizardAnswers)}"');
     } else {
       buffer.writeln('Report: "${reportText ?? ''}"');
     }
@@ -113,5 +124,35 @@ class ConflictContextBuilder {
       if (value != null) return value.toString();
     }
     return null;
+  }
+
+  /// Assembles the guided Report Wizard's structured answers into a single
+  /// sentence for the `Report:` line, gracefully omitting any missing/empty
+  /// parts rather than emitting "null" or empty clauses. See [build]'s
+  /// [wizardAnswers] doc for the expected keys.
+  static String _buildWizardReportLine(Map<String, String> wizardAnswers) {
+    final whatsHappening = wizardAnswers['whatsHappening'];
+    final whoInvolved = wizardAnswers['whoInvolved'];
+    final detailText = wizardAnswers['detailText'];
+
+    final hasWhatsHappening =
+        whatsHappening != null && whatsHappening.trim().isNotEmpty;
+    final hasWhoInvolved = whoInvolved != null && whoInvolved.trim().isNotEmpty;
+    final hasDetailText = detailText != null && detailText.trim().isNotEmpty;
+
+    if (!hasWhatsHappening && !hasWhoInvolved && !hasDetailText) {
+      return 'Report submitted via guided wizard.';
+    }
+
+    final buffer = StringBuffer();
+    if (hasWhatsHappening) buffer.write(whatsHappening);
+    if (hasWhoInvolved) {
+      buffer.write(' People involved: $whoInvolved.');
+    }
+    if (hasDetailText) {
+      buffer.write(' Additional detail: "$detailText"');
+    }
+
+    return buffer.toString().trim();
   }
 }
