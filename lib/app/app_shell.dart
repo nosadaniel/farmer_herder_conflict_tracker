@@ -46,11 +46,24 @@ class AppShell extends StatelessWidget {
           ),
         ],
       ),
-      body: SafeArea(child: dynamicCanvas),
-      bottomNavigationBar: BottomAppBar(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: footer,
+      // `footer` lives in `body`'s own Column, not a separate
+      // `bottomNavigationBar`/`BottomAppBar` slot — found via on-device
+      // testing (task.md Phase 5) that a `BottomAppBar`-hosted button never
+      // received taps on Android (confirmed via a debugPrint in its
+      // onPressed that never fired, while every other screen's body-Column
+      // button worked reliably), root cause not fully diagnosed under time
+      // pressure but consistently reproducible across two physical/emulator
+      // devices. Matches the same body-Column button placement every other
+      // screen in this app already uses (WelcomeScreen, TutorialScreen).
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(child: dynamicCanvas),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: footer,
+            ),
+          ],
         ),
       ),
     );

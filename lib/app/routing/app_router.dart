@@ -11,11 +11,34 @@ import 'app_routes.dart';
 
 part 'app_router.g.dart';
 
-/// The app's [GoRouter], gated entirely by [onboardingControllerProvider] —
-/// no local "which screen" state anywhere. Watching that provider here
-/// means this provider (and therefore the router) rebuilds the moment
-/// onboarding completes, and [redirect] below bounces the user to the
-/// right place.
+/// The app's [GoRouter] — a single, stable instance for the app's lifetime,
+/// gated by [onboardingControllerProvider] via `refreshListenable` (not by
+/// watching the provider to rebuild the router object itself — see the
+/// correction note below). No local "which screen" state anywhere; [redirect]
+/// bounces the user to the right place whenever the location or the
+/// onboarding flag changes.
+///
+/// **Correction (found via on-device testing, task.md Phase 5)**: this used
+/// to `ref.watch(onboardingControllerProvider)` and construct a brand-new
+/// `GoRouter(...)` on every change. That's wrong: `MaterialApp.router`
+/// tears down and remounts its entire `Navigator`/routed widget subtree
+/// whenever `routerConfig`'s object identity changes, which unmounts
+/// whatever screen just called `onboardingControllerProvider.notifier
+/// .complete()` *before* that screen's own follow-up `context.go(...)` call
+/// can run — so an explicit post-onboarding navigation (e.g. to
+/// [ReportWizardRoute]) silently never happens; the new router's own
+/// `redirect` pass (evaluated against its `initialLocation`, not wherever
+/// the explicit call wanted to go) is the only thing that ends up
+/// navigating anywhere. This was invisible for [_completeOnboardingAndGoHome]
+/// only because its destination (Home) happens to be the *same* place
+/// `redirect` lands anyway for an onboarded user at `initialLocation`.
+/// `refreshListenable` is go_router's documented fix for exactly this: one
+/// router instance for the app's lifetime, whose `redirect` re-runs (for
+/// whatever location the app is *currently* at, not a fresh
+/// `initialLocation`) each time the listenable fires — so the Navigator and
+/// every screen's `BuildContext` stay mounted across an onboarding-complete
+/// event, and an explicit `context.go(...)` issued right after always wins
+/// as the final word.
 ///
 /// Route tree (see app_routes.dart for the path-naming rationale):
 /// - `/` -> [MainScreen] ([HomeRoute])
@@ -26,12 +49,21 @@ part 'app_router.g.dart';
 ///   Started" and from [HomeRoute]'s "Report" CTA alike.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
-  final onboardedAsync = ref.watch(onboardingControllerProvider);
+  // Pings go_router to re-run `redirect` without touching the router
+  // object's identity — see the correction note above. `ref.listen` (not
+  // `ref.watch`) so this provider function itself never reruns, i.e. the
+  // `GoRouter(...)` below is constructed exactly once.
+  final refreshNotifier = ValueNotifier(0);
+  ref.listen(onboardingControllerProvider, (previous, next) {
+    refreshNotifier.value++;
+  });
+  ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
     initialLocation: OnboardingWelcomeRoute.path,
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
-      final onboarded = onboardedAsync.value;
+      final onboarded = ref.read(onboardingControllerProvider).value;
       // Still loading the persisted flag — don't redirect yet, whatever
       // initialLocation resolved to is shown as-is (imperceptibly brief:
       // this is a single Drift row read).
@@ -81,7 +113,11 @@ GoRouter appRouter(Ref ref) {
 
 /// Persists onboarding completion (best-effort — a failed cache write
 /// should never trap the user on the onboarding screens, matching the
-/// original OnboardingFlow's behavior) then navigates home.
+/// original OnboardingFlow's behavior) then navigates home. Safe to call
+/// `context.go(...)` directly right after `complete()`: [appRouter]'s
+/// `refreshListenable` setup keeps the Navigator/this screen's `context`
+/// mounted across the onboarding-complete event (see that provider's doc
+/// comment), so there's no teardown race to defer around.
 Future<void> _completeOnboardingAndGoHome(BuildContext context, Ref ref) async {
   try {
     await ref.read(onboardingControllerProvider.notifier).complete();
