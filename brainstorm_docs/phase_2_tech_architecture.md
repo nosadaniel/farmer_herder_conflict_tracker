@@ -1,9 +1,9 @@
 # Technical Architecture Document: Farmer-Herders Conflict Tracker
 
-**Version**: 1.0.0  
-**Last Updated**: September 20, 2026  
+**Version**: 1.1.0  
+**Last Updated**: September 21, 2026  
 **Phase**: 2 - Product Planning  
-**Status**: Draft  
+**Status**: Draft — realigned to the Guided Report Wizard (see `docs/report_wizard_ux_flow.md`)  
 **Author**: Based on idea/architecture_idea.md, idea/tech_stack.md, brainstorm_docs/phase_2_prd.md
 **Related Document**: phase_2_development_patterns.md
 
@@ -43,14 +43,15 @@ This architecture directly supports the PRD requirements:
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        FLUTTER MOBILE APP                                │
 │  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │  STATIC FRAME                                            DYNAMIC CANVAS │  │
-│  │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────────┐ │  │
-│  │  │  Onboarding  │    ┌──────────┐   │   A2UI WORKSPACE         │ │  │
-│  │  │   Screens   │    │   Mic    │   │  (GenUI Rendered)        │ │  │
-│  │  └─────────────┘    │  Button │    └─────────────────────────┘ │  │
-│  │                    └────┬─────┘                ┌─────────────────────────┐ │  │
-│  │                         │                      │  Share Button            │ │  │
-└────────────────────────────┼────────────────────────────────────────┘
+│  │  ONBOARDING (content-only)          GUIDED REPORT WIZARD              │  │
+│  │  ┌─────────────┐    ┌───────────────────────┐    ┌───────────────┐ │  │
+│  │  │  Persona/   │    │ Stepper + Chip Trail   │    │ A2UI WORKSPACE │ │  │
+│  │  │  benefit    │───▶│ Steps 1-4 (tap-first,  │───▶│ (Result surface,│ │  │
+│  │  │  screens    │    │ Speak/Write @ Step 4)  │    │  GenUI Rendered)│ │  │
+│  │  └─────────────┘    └───────────┬────────────┘    └───────┬────────┘ │  │
+│  │                                 │                  ┌──────┴───────┐  │  │
+│  │                                 │                  │ Share Button │  │  │
+└─────────────────────────────────────┼──────────────────┴──────────────┘
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -82,8 +83,8 @@ This architecture directly supports the PRD requirements:
 ```
 
 ### Key Interactions
-1. **User → App**: Voice input via microphone, GPS coordinates
-2. **App → Firebase AI**: Audio stream for transcription + LLM processing
+1. **User → App**: Structured tap choices from the Guided Report Wizard (location, situation, who's-involved chips) plus optional voice/text enrichment at the wizard's last step; GPS/mic permissions requested in-context at Steps 1 and 4 respectively, not during onboarding
+2. **App → Firebase AI**: Audio stream for transcription (Step 4 only) + LLM processing of the full context block
 3. **Firebase AI → App**: A2UI JSON blueprint stream
 4. **App → Open-Meteo**: Weather data request (client-side)
 5. **App → GenUI**: A2UI blueprint rendering
@@ -165,7 +166,7 @@ This architecture directly supports the PRD requirements:
 | **Mobile App** | Flutter cross-platform application | User interface, voice/text input, map display | Flutter, Riverpod |
 | **Voice Processor** | Audio capture and streaming | Record audio, stream to Firebase AI | record, firebase_ai |
 | **Text Processor** | Text input handling | Capture text, send to LLM for processing | Flutter TextField, firebase_ai |
-| **AI Engine** | Client-side LLM integration | Process voice OR text, generate A2UI, assess risk | firebase_ai, Gemini 2.5 Flash |
+| **AI Engine** | Client-side LLM integration | Process wizard chips plus optional voice/text enrichment, generate A2UI, assess risk | firebase_ai, Gemini 2.5 Flash |
 | **A2UI Renderer** | Dynamic UI engine | Parse A2UI JSON, render components | genui |
 | **Map Engine** | Geospatial display | Render maps, show hotspots, calculate routes | flutter_map, latlong2 |
 | **Weather Service** | Climate data provider | Fetch drought index, rainfall data | http, Open-Meteo API |

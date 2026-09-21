@@ -118,7 +118,7 @@ This Lean Canvas captures the business strategy for Farmer-Herders Conflict Trac
 ## 3. ✨ Unique Value Proposition
 
 ### UVP Statement
-**"The first voice-first, offline-capable early-warning system that predicts and prevents farmer-herder conflicts in Nigeria by transforming community reports into lifesaving action."**
+**"The first guided, offline-capable early-warning system that predicts and prevents farmer-herder conflicts in Nigeria by transforming community reports into lifesaving action."**
 
 ### High-Level Concept
 - **"Uber for Conflict Prevention"** - Real-time, on-demand threat reporting and alerting
@@ -129,7 +129,7 @@ This Lean Canvas captures the business strategy for Farmer-Herders Conflict Trac
 
 | Feature | Us | WhatsApp Groups | Ushahidi | ACLED |
 |---------|----|----------------|---------|------|
-| Voice Reporting | ✅ | ❌ | ❌ | ❌ |
+| Guided, No-Typing Reporting | ✅ | ❌ | ❌ | ❌ |
 | Offline Capable | ✅ | ❌ | ❌ | ❌ |
 | Predictive Analytics | ✅ | ❌ | ❌ | ✅ |
 | Dynamic UI | ✅ | ❌ | ❌ | ❌ |
@@ -139,7 +139,7 @@ This Lean Canvas captures the business strategy for Farmer-Herders Conflict Trac
 | Community-Focused | ✅ | ✅ | ❌ | ❌ |
 
 ### Key Differentiators
-1. **Voice-First**: No typing required, accessible to low-literacy users
+1. **Guided, Tap-First**: A step-by-step wizard, not a blank input — no typing required for the core report, accessible to low-literacy users
 2. **Offline-First**: Works without internet in rural areas
 3. **Predictive**: Uses AI to assess risk levels before conflicts escalate
 4. **Dynamic**: UI adapts to user's specific context and risk level
@@ -152,9 +152,9 @@ This Lean Canvas captures the business strategy for Farmer-Herders Conflict Trac
 
 ### Top Solutions
 
-1. **Voice Reporting System**
-   - Users press and hold microphone to report threats
-   - Audio transcribed and processed by AI (Gemini 2.5 Flash)
+1. **Guided Report Wizard**
+   - Users tap through a short sequence (Where? → What's happening? → Who's involved?) instead of facing a blank input
+   - Optional voice or text at the final step adds detail; audio is transcribed and processed by AI (Gemini 2.5 Flash)
    - Works offline for initial report, syncs when network returns
    - **Addresses**: Low literacy, communication gaps
 
@@ -400,9 +400,9 @@ This Lean Canvas captures the business strategy for Farmer-Herders Conflict Trac
 
 ### Competitive Edge
 
-1. **Voice-First AI Integration**
-   - **Advantage**: No competitor offers voice-first conflict reporting
-   - **Barrier**: Requires firebase_ai + Gemini integration expertise
+1. **Guided-Wizard AI Integration**
+   - **Advantage**: No competitor offers a guided, tap-first conflict-reporting flow with optional voice/text enrichment
+   - **Barrier**: Requires firebase_ai + Gemini integration expertise, plus a dual-session GenUI design (a bounded createAndUpdate/data-bound session for the wizard, separate from the existing createOnly Result-surface flow)
    - **Replicability**: Medium (requires technical knowledge)
 
 2. **Zero-Signal Architecture**
@@ -431,11 +431,11 @@ This Lean Canvas captures the business strategy for Farmer-Herders Conflict Trac
    - **Replicability**: Medium
 
 ### Unfair Advantage Summary
-**"Deep local understanding + voice-first AI + offline architecture = A solution uniquely positioned to solve Nigeria's farmer-herder conflict crisis."**
+**"Deep local understanding + guided AI wizard + offline architecture = A solution uniquely positioned to solve Nigeria's farmer-herder conflict crisis."**
 
 The combination of:
 - Local context expertise (Nigeria, farmer-herder conflicts)
-- Technical innovation (A2UI, Zero-Signal, Voice-First)
+- Technical innovation (A2UI, Zero-Signal, Guided Wizard)
 - Community trust (existing leader networks)
 - Cost efficiency ($0 MVP architecture)
 

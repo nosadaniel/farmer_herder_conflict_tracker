@@ -60,14 +60,14 @@
 ## 💡 Slide 3: Our Solution
 
 ### Headline
-**The First Voice-First, Offline-Capable Early-Warning System**
+**The First Guided, Offline-Capable Early-Warning System**
 
 ### Key Features
 
-**🎙️ Voice Reporting**
-- Press & hold to report threats via voice
-- No typing required - perfect for low-literacy users
-- Audio transcribed and processed by AI in real-time
+**🎙️ Guided Report Wizard**
+- A few taps — Where? What's happening? Who's involved? — walk the user to a finished report, then optional voice or text adds detail
+- No typing required for the core report - perfect for low-literacy users
+- Optional voice is transcribed and processed by AI in real-time
 
 **🗺️ Dynamic Conflict Map**
 - See conflict hotspots on interactive map
@@ -113,7 +113,7 @@
 
 ### Competitive Landscape
 **No direct competitor** offers our combination:
-- ✅ Voice-First
+- ✅ Guided, Tap-First (Voice/Text Optional)
 - ✅ Offline-Capable  
 - ✅ Predictive Analytics
 - ✅ Dynamic UI
@@ -131,20 +131,20 @@
 ## 🔧 Slide 5: How It Works
 
 ### Headline
-**From Voice Report to Community Alert in 10 Seconds**
+**From a Few Taps to a Community Alert in 10 Seconds**
 
 ### User Flow (5 Steps)
 
 ```
-1️⃣  USER REPORTS
+1️⃣  USER TAPS THROUGH THE WIZARD
    ↓
-   "Large herd approaching my farm"
-   (Voice or Text Input)
+   Where? → What's happening? → Who's involved?
+   (+ optional Speak or Write for extra detail)
 
 2️⃣  AI PROCESSES
    ↓
    Gemini 2.5 Flash analyzes:
-   - Voice/text transcription
+   - Structured wizard chips + optional voice/text detail
    - Location coordinates
    - Weather context
    - Historical data
@@ -196,7 +196,7 @@
 
 | Feature | Us | WhatsApp | Ushahidi | ACLED |
 |---------|----|---------|---------|------|
-| Voice Reporting | ✅ | ❌ | ❌ | ❌ |
+| Guided, No-Typing Reporting | ✅ | ❌ | ❌ | ❌ |
 | Offline Capable | ✅ | ❌ | ❌ | ❌ |
 | Predictive AI | ✅ | ❌ | ❌ | ✅ |
 | Dynamic UI | ✅ | ❌ | ❌ | ❌ |
@@ -207,7 +207,7 @@
 
 ### Our Secret Sauce
 
-🔹 **Voice-First**: Optimized for low-literacy users (78% prefer voice)  
+🔹 **Guided, Tap-First**: A step-by-step wizard, not a blank input — optimized for low-literacy users, with voice/text as optional enrichment  
 🔹 **Offline-First**: Works in areas with **zero** connectivity (65% of rural Nigeria)  
 🔹 **A2UI Pattern**: First application of Agent-to-User Interface to emergency response  
 🔹 **Community-Driven**: Leverages existing trust networks (92% trust leaders)  
@@ -531,7 +531,7 @@
 1. **Nigeria**: 1M+ users, 50% conflict reduction in target regions
 2. **Africa**: Expand to 5+ countries with similar conflicts
 3. **Global**: Template for conflict early-warning worldwide
-4. **Technology**: Standard for voice-first, offline emergency systems
+4. **Technology**: Standard for guided, offline emergency reporting systems
 5. **Impact**: 100,000+ lives saved
 
 ### Visual
@@ -598,9 +598,10 @@
 
 ### Slide 3: Our Solution
 **Speaker Notes**:
-- "We've built the first voice-first, offline-capable early-warning system."
-- "Users can report threats simply by speaking - no typing required."
-- "The AI processes the report and generates a dynamic interface with actionable information."
+- "We've built the first guided, offline-capable early-warning system."
+- "Users report threats with a few taps - a short wizard walks them from 'where' to 'what's happening' to 'who's involved,' no typing required."
+- "If they want to add more, they can speak or write a bit of extra detail - it's optional, not the starting point."
+- "The AI processes all of that and generates a dynamic interface with actionable information."
 - "Most importantly, it works offline - critical for rural areas with poor connectivity."
 - **Demo Opportunity**: "I'd be happy to show you a quick demo after the presentation."
 
@@ -608,13 +609,13 @@
 **Speaker Notes**:
 - "Our market is 40 million farmers and herders in Nigeria alone."
 - "But we're starting with the 9.6 million Android users in the most conflict-prone regions."
-- "No one else is offering a solution that combines voice-first, offline, and predictive capabilities."
+- "No one else is offering a solution that combines guided, tap-first reporting, offline, and predictive capabilities."
 - "This is a blue ocean market - we're the first."
 
 ### Slide 5: How It Works
 **Speaker Notes**:
-- "The user flow is incredibly simple - just 5 steps from report to alert."
-- "Voice or text input goes to our AI, which assesses the risk."
+- "The user flow is incredibly simple - just a few taps through a guided wizard, then straight to an alert."
+- "Structured taps, plus any optional voice or text detail, go to our AI, which assesses the risk."
 - "The app generates a dynamic UI with appropriate warnings and actions."
 - "Users can share alerts to any social platform with one tap."
 - **Technical Deep Dive**: "For the tech-minded, we're using Flutter, Firebase AI, and GenUI - all free tier."
@@ -622,7 +623,7 @@
 ### Slide 6: Why We Stand Out
 **Speaker Notes**:
 - "What really sets us apart is our combination of features."
-- "Voice-first makes us accessible to low-literacy users."
+- "The guided, tap-first wizard makes us accessible to low-literacy users - no blank input to stare at."
 - "Offline capability means we work everywhere."
 - "Predictive analytics helps prevent conflicts before they happen."
 - "No one else offers all three in one package."

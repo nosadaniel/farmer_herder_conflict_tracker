@@ -65,3 +65,4 @@ firebase.json
 key.properties
 *.jks
 *.keystore
+.DS_Store

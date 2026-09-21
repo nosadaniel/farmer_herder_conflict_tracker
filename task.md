@@ -3,12 +3,14 @@
 **Source of truth**: `brainstorm_docs/phase_1_approved.md`, `phase_2_prd.md`, `phase_2_tech_architecture.md`, `phase_2_development_patterns.md`, `phase_2_ux_design.md`, `phase_4_delivery_plan.md`, `idea/*.md`, `dataset/output/farmer_herder_conflict.json`
 
 ## Hard deadlines (compressed from the original hackathon schedule)
-| Checkpoint | Time | Meaning |
+| Checkpoint | Time | Status |
 |---|---|---|
-| **MVP code-complete / ready for testing** | **00:00 tonight** | App builds, installs, and the full voice→A2UI→map→share loop runs on a device/emulator. Bugs are allowed; missing features are not (for MUST items). |
-| **Final submission** | **18:00 tomorrow (Sept 21)** | All 5 hackathon artifacts delivered and links collected. |
+| **MVP code-complete / ready for testing** | ~~00:00 tonight~~ | ✅ Passed — full voice→A2UI→map→share loop confirmed on device (Phase 3 QA, commit `ea5338e` and later) |
+| **Final submission** | **11:46 PM today (2026-09-21)** — corrected from this doc's earlier "18:00 tomorrow," which was stale | ❌ **Not yet done** — Phase 4 artifacts (README, pitch deck, demo video, public deploy links, submission form) are still outstanding. This is the live, urgent deadline. |
 
 Everything below is scoped to fit that window. **Scope has been cut harder than the brainstorm docs** (see "Cut list" at the bottom) because the original plan assumed ~24h with a full evening for polish + web build; we have less.
+
+**Priority order right now**: finish Phase 4 (submission artifacts) before touching Phase 5 (Guided Report Wizard refactor) — Phase 5 is real, planned, post-submission work, but it does not matter if the 11:46 PM submission doesn't happen first.
 
 ---
 
@@ -160,6 +162,31 @@ Can run partly in parallel with late Phase 3 polish:
 - [ ] Trigger the `deploy-web` CI job **only if the web stretch goal survived the cut list**
 - [ ] GitHub repo made public, all links collected into README
 - [ ] Final submission form
+
+---
+
+### Phase 5 — Guided Report Wizard Refactor → **post-submission, does not block the 11:46 PM deadline**
+
+**Status (2026-09-21)**: design-complete, not yet implemented. This is a deliberate post-MVP UX rework, decided and specced *after* the app already hit the 00:00 code-complete checkpoint and passed Phase 3 QA (voice/text → A2UI → map → share, offline rehydration — all confirmed working on device, commit history through `bf299ef`). **Submission has not happened yet** — Phase 4's artifacts are still outstanding and the real deadline is **11:46 PM today**, not the "18:00 tomorrow" this doc originally (incorrectly) said. Finish and submit Phase 4 first; this phase starts once that's done, on its own branch.
+
+**What changes, in one sentence**: onboarding becomes persona/benefit-only (zero permission requests), a new 4-step "Guided Report Wizard" (Where? / What's happening? / Who's involved? / optional Speak-or-Write detail) replaces the persistent mic+keyboard footer as the app's single reporting mechanism, and the historical-hotspot map moves from a docked native widget into the AI-generated surface itself via a custom `MapView` `CatalogItem`.
+
+**Source of truth** (read in this order):
+1. `docs/report_wizard_ux_flow.md` — screen-by-screen UX spec (wireframes, copy, permission-timing, chip-trail/Back/Skip behavior)
+2. `docs/refactor.md` — implementation guide (GenUI session architecture, FSM, DataModel bindings, file layout), written against the real `genui-0.10.3` source and cross-checked against `docs/example_usage_genui.md`'s working reference implementation
+3. `docs/a2ui_gemini_contract.md` — updated with a scope note (§0) and the `MapView` catalog addition (§2/§3/§4); everything else in it (risk rubric, tone, `share_alert` handling, worked example) is unchanged and still governs the Result-surface session
+4. `brainstorm_docs/phase_2_prd.md`, `phase_2_ux_design.md`, `phase_2_tech_architecture.md`, `phase_3_lean_canvas.md`, `phase_3_pitch_deck.md`, `phase_3_gtm_strategy.md`, `phase_4_delivery_plan.md`, `phase_1_approved.md` — all realigned to this design already (2026-09-21)
+
+**Build order** (each item additive or isolated — no rewrite of Phase 0–3's working code, per `docs/refactor.md` §9 "what this deliberately does not change"):
+- [ ] Extract `requestLocationPermission()`/`requestMicrophonePermission()` out of `permissions_screen.dart` into `lib/core/permissions/permission_requesters.dart` (reused by Wizard Steps 1 and 4)
+- [ ] Rewrite `welcome_screen.dart`/`tutorial_screen.dart` with persona/benefit copy (4 screens: Welcome, Voice, Map, Share — mapped to Ibrahim/Musa pain points); delete `permissions_screen.dart` and its route
+- [ ] Build the `MapView` `CatalogItem` (`lib/core/genui/map_view_catalog_item.dart`) + a camera-state provider so pan/zoom survives surface recreation; merge into both the Result-session catalog (`a2ui_providers.dart`, `gemini_remote_datasource.dart`) and the new wizard catalog
+- [ ] Build the wizard feature module (`lib/features/report_wizard/**` per `docs/refactor.md` §8): `ReportWizardSession`, `ReportWizardStep` FSM enum + `WizardBinding`, wizard system prompt, `ReportWizardController`, `ReportWizardScreen` + chip-trail widget
+- [ ] Bridge into the existing report flow: extend `ConflictContextBuilder.build` with an optional `wizardAnswers` param, add `ReportSubmissionController.submitStructured(...)` — both additive, zero changes to the frozen Result-surface contract
+- [ ] Update routing: onboarding → wizard (replaces the old onboarding → permissions → tutorial → home chain); `MainScreen`'s `_DynamicCanvas` drops its hardcoded `ConflictMap` (now map-in-surface) and its footer becomes a single "Report" CTA
+- [ ] `fvm dart run build_runner build --delete-conflicting-outputs`, `fvm flutter analyze`, `fvm flutter test`, then a full manual run-through per `docs/refactor.md` §10
+
+**Explicitly not touched**: `GeminiRemoteDataSource`'s risk-classification prompt/rubric, `gemini_send_handler.dart`, `handle_share_alert.dart`, the Result surface's component contract, Drift schema (reuses the existing `Cache` key/value table for wizard persistence, same pattern as `has_onboarded`).
 
 ---
 

@@ -113,8 +113,8 @@ Historical context: 3 conflicts in this sector last month
 
 **Minimum Viable for Judges**:
 - [ ] App opens and shows user location on map
-- [ ] User can press & hold to report via voice
-- [ ] Voice transcription works via firebase_ai
+- [ ] User can complete a report via the Guided Report Wizard (tap-first Steps 1-3, optional voice/text at Step 4)
+- [ ] Voice transcription works via firebase_ai (Step 4 enrichment)
 - [ ] LLM generates A2UI blueprint based on context
 - [ ] genui renders dynamic UI from blueprint
 - [ ] User can share alerts to any social media app

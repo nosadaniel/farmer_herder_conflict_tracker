@@ -1,9 +1,9 @@
 # Go-to-Market Strategy Document: Farmer-Herders Conflict Tracker
 
-**Version**: 1.0.0  
-**Last Updated**: September 20, 2026  
+**Version**: 1.1.0  
+**Last Updated**: September 21, 2026  
 **Phase**: 3 - Business Development  
-**Status**: Draft  
+**Status**: Draft — realigned to the Guided Report Wizard (see `docs/report_wizard_ux_flow.md`)  
 **Author**: Based on idea/idea.md, brainstorm_docs/phase_2_prd.md, brainstorm_docs/phase_3_lean_canvas.md
 
 ---
@@ -11,12 +11,12 @@
 ## 🎯 Executive Summary
 
 ### Product Overview
-Farmer-Herders Conflict Tracker is a voice-first, AI-powered mobile application that provides early warnings for farmer-herder conflicts in Nigeria. It enables rural communities to report threats via voice or text, visualize conflict hotspots on maps, and share alerts through social media - all while working offline in areas with poor connectivity.
+Farmer-Herders Conflict Tracker is a guided, tap-first, AI-powered mobile application that provides early warnings for farmer-herder conflicts in Nigeria. It walks rural communities through a short tap-only wizard to report threats (with optional voice or text detail), visualize conflict hotspots on maps, and share alerts through social media - all while working offline in areas with poor connectivity.
 
 ### Market Opportunity
 - **Target Market**: 10M+ farmers and herders in Nigeria's Middle Belt region
 - **Problem Scale**: 10,000+ deaths annually from farmer-herder conflicts
-- **Market Gap**: No existing predictive, offline-capable, voice-first solution
+- **Market Gap**: No existing predictive, offline-capable, guided tap-first solution
 - **Growth Driver**: Climate-driven desertification increasing conflict frequency
 
 ### Key Objectives
@@ -98,7 +98,7 @@ Farmer-Herders Conflict Tracker is a voice-first, AI-powered mobile application 
 | Competitor | Strengths | Weaknesses | Market Share | Our Advantage |
 |------------|-----------|------------|--------------|--------------|
 | **WhatsApp Groups** | Ubiquitous, free, real-time | Fragmented, no mapping, reactive only | 80% | Centralized, predictive, mapped |
-| **Ushahidi** | Crowdsourced, mapping | Form-based, requires internet | 5% | Voice-first, offline-capable |
+| **Ushahidi** | Crowdsourced, mapping | Form-based, requires internet | 5% | Guided tap-first (not a blank form), offline-capable |
 | **ACLED** | Comprehensive data, research-grade | Not real-time, not user-facing | 1% | User-generated, actionable |
 | **Local Radio** | Broad reach, trusted | One-way, slow, not location-specific | 10% | Two-way, real-time, precise |
 
@@ -110,7 +110,7 @@ Farmer-Herders Conflict Tracker is a voice-first, AI-powered mobile application 
 ### SWOT Analysis
 
 #### Strengths (Internal)
-✅ **Voice-First**: Optimized for low-literacy users  
+✅ **Guided, Tap-First**: Optimized for low-literacy users, voice/text as optional enrichment  
 ✅ **Offline Capable**: Works in areas with no connectivity  
 ✅ **AI-Powered**: Predictive risk assessment using Gemini  
 ✅ **Community Trust**: Leverages existing leader networks  
@@ -160,7 +160,7 @@ Innovation ─────────┼─────────────
                     LOW
 ```
 
-**Our Position**: High innovation (A2UI, Voice-First, Offline) + High customization (Nigeria-specific, community-focused)
+**Our Position**: High innovation (A2UI, Guided Wizard, Offline) + High customization (Nigeria-specific, community-focused)
 
 ---
 
@@ -225,14 +225,14 @@ Innovation ─────────┼─────────────
 ## 💎 Value Proposition
 
 ### Unique Value Proposition (UVP)
-**"The first voice-first, offline-capable early-warning system that predicts and prevents farmer-herder conflicts in Nigeria, saving lives through community-powered AI."**
+**"The first guided, offline-capable early-warning system that predicts and prevents farmer-herder conflicts in Nigeria, saving lives through community-powered AI."**
 
 ### Key Benefits
 
 #### For Community Leaders & Farmers
 ✅ **Prevent Conflicts**: Get warnings before violence occurs  
 ✅ **Save Lives**: Protect your community from attacks  
-✅ **Easy to Use**: Speak your report, no typing required  
+✅ **Easy to Use**: Tap through a few quick questions, no typing or speaking required  
 ✅ **Works Everywhere**: No internet needed in rural areas  
 ✅ **Free**: Zero cost to use, no data charges  
 ✅ **Trusted**: Reports from your community members  
@@ -250,7 +250,7 @@ Innovation ─────────┼─────────────
 ✅ **Community Insights**: Understand local dynamics  
 
 ### Positioning Statement
-For **rural Nigerian communities** who **lack early warning systems for farmer-herder conflicts**, the **Farmer-Herders Conflict Tracker** is a **voice-first mobile app** that **provides predictive threat alerts and enables community reporting**. Unlike **WhatsApp groups (fragmented, reactive) or Ushahidi (internet-required, form-based)**, our product **works offline, uses voice input, and predicts conflicts before they happen**.
+For **rural Nigerian communities** who **lack early warning systems for farmer-herder conflicts**, the **Farmer-Herders Conflict Tracker** is a **guided, tap-first mobile app** that **provides predictive threat alerts and enables community reporting**. Unlike **WhatsApp groups (fragmented, reactive) or Ushahidi (internet-required, form-based)**, our product **works offline, guides users through a short tap-only wizard (with optional voice/text detail), and predicts conflicts before they happen**.
 
 ---
 
@@ -546,11 +546,11 @@ AWARENESS (100,000) → CONSIDERATION (10,000) → CONVERSION (1,000) → RETENT
 
 **Round 1 - Market Size Validation**:
 - Date: September 20, 2026
-- Key Insights: TAM of 40M in Nigeria alone. SAM of 9.6M in target regions. Competition is minimal in the voice-first, offline-capable niche.
+- Key Insights: TAM of 40M in Nigeria alone. SAM of 9.6M in target regions. Competition is minimal in the guided, tap-first, offline-capable niche.
 
 **Round 2 - Competitive Analysis**:
 - Date: September 20, 2026
-- Key Insights: WhatsApp Groups are the primary "competitor" but are fragmented and reactive. No solution offers our combination of voice-first + offline + predictive features.
+- Key Insights: WhatsApp Groups are the primary "competitor" but are fragmented and reactive. No solution offers our combination of guided tap-first + offline + predictive features.
 
 **Round 3 - Channel Effectiveness**:
 - Date: September 20, 2026

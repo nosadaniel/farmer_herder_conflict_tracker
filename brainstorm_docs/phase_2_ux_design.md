@@ -1,37 +1,40 @@
 # User Experience (UX) Design Document: Farmer-Herders Conflict Tracker
 
-**Version**: 1.0.0  
-**Last Updated**: September 20, 2026  
+**Version**: 1.1.0  
+**Last Updated**: September 21, 2026  
 **Phase**: 2 - Product Planning  
-**Status**: Draft  
-**Author**: Based on idea/idea.md, idea/frontend_architecture_idea.md, brainstorm_docs/phase_2_prd.md, brainstorm_docs/phase_2_tech_architecture.md
+**Status**: Draft — realigned to the Guided Report Wizard  
+**Author**: Based on idea/idea.md, idea/frontend_architecture_idea.md, brainstorm_docs/phase_2_prd.md, brainstorm_docs/phase_2_tech_architecture.md, docs/report_wizard_ux_flow.md
 
 ---
 
 ## 🎨 UX Overview
 
 ### Purpose
-Create an intuitive, accessible, and effective user experience that enables rural Nigerian users with low literacy to report conflicts, receive warnings, and take protective action through a voice-first, context-aware interface that adapts dynamically to their situation.
+Create an intuitive, accessible, and effective user experience that enables rural Nigerian users with low literacy to report conflicts, receive warnings, and take protective action. The app's core job is to **guide the user, one small decision at a time, all the way to a finished result** — never a blank input field, never a form. This guided-wizard model is now the app's central mechanism, not one flow among several.
+
+> **Canonical spec**: The step-by-step screens, chip-trail behavior, and permission-timing rules are fully specified in [`docs/report_wizard_ux_flow.md`](../docs/report_wizard_ux_flow.md), inspired by a Gemini-image-creation guided-creation pattern (see `inspiration_design.md`). This document should be read alongside it — the wireframes here are condensed summaries; that doc is the source of truth for exact screen contracts.
 
 ### Scope
 This document covers the complete UX design for MVP (v1.0) including:
-- Static Frame (onboarding, persistent elements)
-- Dynamic Canvas (A2UI workspace)
-- Voice interaction patterns
+- Onboarding (persona/benefit screens only — zero permission requests)
+- The Guided Report Wizard (chip trail + stepper + per-step tap-only choices, the app's single reporting mechanism)
+- In-context permission requests (location at Wizard Step 1, microphone at Wizard Step 4 — no separate "permissions" screen)
+- Dynamic Canvas / Result surface (A2UI workspace rendered at the end of the wizard)
 - Map visualization
 - Social sharing flows
 - Offline experience
 
 ### Alignment with PRD and GTM
-- Supports PRD requirements for voice-first, offline-capable, accessible design
+- Supports PRD requirements for guided, low-typing, offline-capable, accessible design
 - Aligns with GTM focus on rural Nigerian users (Ibrahim, Musa personas)
-- Emphasizes simplicity and low cognitive load for low-literacy users
+- Emphasizes simplicity and low cognitive load for low-literacy users — one decision per screen, tap-only until the very last optional step
 - Highlights community benefit to drive adoption
 
 ### Alignment with Technical Architecture
 - Works within Flutter constraints (Android 8.0+)
-- Leverages GenUI for dynamic UI rendering
-- Voice-first approach uses firebase_ai audio streaming
+- Leverages GenUI for dynamic UI rendering — the Report Wizard is a **separate, bounded GenUI session** (see `docs/refactor.md`) from the existing Result-surface flow: each wizard step has a fixed `surfaceId` and is bound to a `createAndUpdate(dataModel: false)` `Conversation`, so tap selections write straight to that step's `DataModel` (no Gemini call), and Back/forward navigation between already-visited steps never re-triggers Gemini either — it just re-shows a cached surface. Only the Result surface itself (produced once, at Create) uses the existing `createOnly` `.chat()` flow, unchanged
+- Voice input (via firebase_ai audio streaming) is retained, but only as optional enrichment on the wizard's last step, not the primary entry point
 - Offline capability via Drift caching
 
 ---
@@ -45,7 +48,7 @@ This document covers the complete UX design for MVP (v1.0) including:
 - **Pain Points**: Complex interfaces, typing difficulties, reactive responses
 - **UX Needs**: 
   - Large touch targets (48x48dp minimum)
-  - Voice-first interaction
+  - Tap-first interaction, with voice available when he wants to add detail
   - Clear visual hierarchy
   - Minimal text, maximum icons/symbols
   - High contrast colors for outdoor visibility
@@ -75,15 +78,14 @@ This document covers the complete UX design for MVP (v1.0) including:
 
 ## 🎯 Design Principles
 
-### Principle 1: Voice-First (Text Alternative)
-**Description**: All functionality must be accessible via voice input, with text input available as an alternative.  
-**Rationale**: Low literacy users struggle with text input, but some users may prefer typing.  
-**Implementation**: 
-- Microphone button prominently displayed (bottom center, primary method)
-- Text input icon beside microphone (secondary method)
-- Voice commands for all actions
-- Audio feedback for system responses
-- Text and voice produce identical results
+### Principle 1: Guided, Tap-First (Voice/Text as Enrichment)
+**Description**: The primary path through the app is a sequence of tap-only choices (chips, `ChoicePicker`, `Button`) — no free-text or free-speech input is required until the final, optional step.  
+**Rationale**: Tapping a pre-written option is even lower-friction than speaking for low-literacy users, removes ambiguity for the LLM, and still lets users add nuance by voice or text when they want to.  
+**Implementation**:
+- Steps 1–3 of the Report Wizard are 100% tap-only (location choice, situation chips, who's-involved chips)
+- Step 4 offers **Speak** and **Write** side by side as optional, additive enrichment on top of the structured chips — not a fork in the flow
+- A persistent chip trail at the top of the wizard shows everything decided so far, in plain words
+- Text and voice, when used, produce identical downstream results (both become plain text appended to the context block)
 
 ### Principle 2: Context-Aware
 **Description**: UI adapts based on user location, risk level, and history.  
@@ -105,12 +107,23 @@ This document covers the complete UX design for MVP (v1.0) including:
 **Description**: Reduce thinking required for all interactions.  
 **Rationale**: Low literacy users need simple, obvious actions.  
 **Implementation**:
-- Maximum 3 steps for any action
+- One decision per wizard screen — never more than a handful of options visible at once
+- A 4-dot stepper and chip trail always show where the user is and what's already decided, so nothing has to be held in memory
+- Every step (except the Result) offers a **Skip** — the final report always works with whatever chips exist
 - Large, clear buttons with icons
 - Consistent color coding (Red=Danger, Yellow=Warning, Green=Safe)
 - Progress indicators for loading states
 
-### Principle 5: Community Trust
+### Principle 5: Guided Progression, Not a One-Time Ritual
+**Description**: There is no separate "setup" experience the user has to get through before the app is useful. The Report Wizard *is* the app's core functionality, and it's identical the first time and the hundredth time.  
+**Rationale**: A standalone permissions/setup screen shown before the user has done anything creates a moment of friction with no visible payoff, which is exactly where low-trust, low-literacy users drop off.  
+**Implementation**:
+- Onboarding is content-only (persona/benefit screens), requests zero permissions, and ends by dropping the user straight into the wizard for their first report
+- Location permission is requested at Wizard Step 1, in context, the first time the user wants a prediction for "here"
+- Microphone permission is requested at Wizard Step 4, in context, the first time the user taps "Speak"
+- Denying a permission never dead-ends the flow: "Choose my state" replaces GPS, "Write" replaces Speak
+
+### Principle 6: Community Trust
 **Description**: Build trust through transparency and community focus.  
 **Rationale**: Users need to trust the system to adopt it.  
 **Implementation**:
@@ -119,7 +132,7 @@ This document covers the complete UX design for MVP (v1.0) including:
 - Community leader endorsements
 - Clear data usage (no PII collected)
 
-### Principle 6: Cultural Relevance
+### Principle 7: Cultural Relevance
 **Description**: Design that respects and reflects Nigerian rural culture.  
 **Rationale**: Increase adoption through cultural familiarity.  
 **Implementation**:
@@ -148,39 +161,29 @@ This document covers the complete UX design for MVP (v1.0) including:
 - **Purpose**: Introduce app purpose
 - **Visual**: Illustrated figures, warm colors
 
-### Screen 3: Onboarding - Permissions
+### Screen 3: Onboarding - Tutorial
 - **Description**:
-  - Icon: Microphone + GPS
-  - Headline: "We need access to help you"
-  - Text: "Location: To show you nearby threats\nMicrophone: To record your voice reports"
-  - Allow All button (primary)
-  - Allow Later button (secondary)
-- **Purpose**: Request necessary permissions
-- **Visual**: Permission icons, clear list
-
-### Screen 4: Onboarding - Tutorial
-- **Description**:
-  - 4-step carousel:
-    1. "Press and hold to report" (mic icon)
-    2. "Or type your report" (keyboard icon)
-    3. "See threats on the map" (map icon)
-    4. "Share with your community" (share icon)
+  - 3-step carousel, content-only, **zero permission requests**:
+    1. "Answer a few quick taps about what you're seeing" (chip icon)
+    2. "See threats on the map" (map icon)
+    3. "Share with your community" (share icon)
   - Swipe indicators
-  - Get Started button
+  - Get Started button — drops the user directly into Wizard Step 1 for their first report
 - **Purpose**: Quick user education
 - **Visual**: Simple illustrations, large icons
+- **Note**: The old standalone "Permissions" screen is gone. There is no separate ritual for granting location/microphone access — see Screen 5 (Report Wizard), where each permission is requested in context, the first time it's actually needed.
 
-### Screen 5: Main App Shell (Static Frame)
+### Screen 4: Main App Shell (Static Frame)
 - **Description**:
   - **Header**: App name, network status indicator, settings icon
-  - **Dynamic Canvas**: Central area for A2UI content (changes based on context)
-  - **Persistent Footer**: Large microphone button (press & hold to record) + Text input icon (keyboard)
-  - **Share Button**: Floating action button (bottom-right) for sharing current view
-- **Purpose**: Primary app container
+  - **Dynamic Canvas**: Central area for A2UI content — shows the current risk state for the user's last-known area (see Dynamic Canvas States below)
+  - **Footer**: A single primary CTA, **"Report"**, that launches the Report Wizard (Screen 5)
+  - **Share Button**: Floating action button (bottom-right) for sharing the current view
+- **Purpose**: Primary app container / home state
 - **Visual**: Clean, minimal chrome, maximum space for dynamic content
-- **Note**: Microphone is primary (larger, center), Text icon is secondary (smaller, right of mic)
+- **Note**: The old persistent mic-button + keyboard-icon footer is removed entirely. One CTA replaces both — reporting always goes through the wizard now, whether by voice, tap, or text.
 
-### Dynamic Canvas States:
+### Dynamic Canvas States (shown on the Main App Shell and mirrored on the Wizard's Result screen):
 
 #### State A: Low Risk (Default)
 - **Description**:
@@ -188,7 +191,7 @@ This document covers the complete UX design for MVP (v1.0) including:
   - Map showing user location with green pin
   - Historical conflict hotspots (faded red circles)
   - Weather indicator: "Dry conditions - monitor cattle routes"
-  - Action button: "Report Sighting" (voice)
+  - Action button: "Report Sighting" → launches the wizard
 - **Color Scheme**: Green primary, neutral secondary
 - **Tone**: Calm, informative
 
@@ -219,55 +222,42 @@ This document covers the complete UX design for MVP (v1.0) including:
   - Cached map view
   - Cached A2UI blueprint
   - Disabled: Real-time weather, new reports
-  - Enabled: View cached data, share cached alerts
+  - Enabled: View cached data, share cached alerts, still run the wizard (report queues for sync)
 - **Color Scheme**: Orange primary
 - **Tone**: Informative, not alarming
 
-### Screen 6: Input Mode Selection
-- **Description**:
-  - Bottom sheet with two options:
-    - "🎙️ Speak your report" (primary, large)
-    - "⌨️ Type your report" (secondary, smaller)
-  - Cancel button
-- **Purpose**: Let user choose input method
-- **Visual**: Clear icons, voice option more prominent
+### Screen 5: The Report Wizard (Steps 1–4)
+This screen is the app's single reporting mechanism — the same 4-step flow runs every time, first report or the hundredth. Full step-by-step wireframes, copy, and behavior notes (chip trail, Back/Skip semantics, permission timing) live in [`docs/report_wizard_ux_flow.md`](../docs/report_wizard_ux_flow.md). Condensed summary:
 
-### Screen 7: Voice Recording
-- **Description**:
-  - Modal overlay with large microphone icon pulsing
-  - "Recording..." text
-  - Timer (00:00 to max 2:00)
-  - Cancel button
-  - Visual waveform for audio input
-- **Purpose**: Voice report capture
-- **Visual**: Animated microphone, clear visual feedback
+| Step | Question | Input type | In-context permission |
+|------|----------|-----------|------------------------|
+| 1 — Where? | How should we find your area? | Tap: "Use my location" / "Choose my state" (`ChoicePicker`) | GPS, first time only |
+| 2 — What's happening? | What are you seeing? | Tap: single-select chips (herd sighting, moving toward farmland, confrontation, just checking) | — |
+| 3 — Who's involved? | Who's there? | Tap: single-select chips (herders, farmers, both, not sure) | — |
+| 4 — Add detail (optional) | Want to add more? | Speak or Write, additive on top of Steps 1–3 | Microphone, first time "Speak" is tapped |
 
-### Screen 8: Text Input
-- **Description**:
-  - Full-screen or modal with text field
-  - Input field: "Describe what you see..." (placeholder)
-  - Character counter: "0/500"
-  - Submit button (disabled when empty)
-  - Cancel button
-  - Keyboard: Standard with emoji picker (optional)
-- **Purpose**: Text report capture
-- **Visual**: Clean text field, large input area, clear submit button
+- A **chip trail** at the top accumulates one chip per resolved step and persists across Back navigation.
+- **Skip** is available on every step except the Result — the final Gemini call runs with whatever chips exist.
+- **Back** never re-triggers Gemini — each step is a pre-rendered `Surface` the wizard just walks back to.
+- Tapping **Speak** swaps in a compact recording control (waveform + timer) in place, reusing the existing `MicrophoneButton` recording UI. Tapping **Write** swaps in a single-line field reusing `TextInputModal` validation. Neither is a separate screen or modal takeover.
+- Tapping **Create** fires the one Gemini call: accumulated chips + optional detail text/transcript → existing report-generation system prompt + context block.
 
-### Screen 9: Report Confirmation
+### Screen 6: Result
 - **Description**:
-  - "Report Received" headline
-  - Transcription text (large, readable)
-  - Map showing report location
-  - Risk level assessment (Low/Medium/High)
-  - Share button (primary)
-  - Edit button (if transcription wrong)
-- **Purpose**: Confirm and share report
-- **Visual**: Checkmark icon, clear confirmation
+  - ✕ close/restart control, top-left
+  - `MapView` catalog item (live map, hotspots + user pin) — same component as the Dynamic Canvas states, now embedded inside the wizard's final surface
+  - Risk headline (e.g. "⚠ Medium risk nearby")
+  - 1–2 sentence summary
+  - Action buttons, Gemini-authored (e.g. "Report Sighting", "View Safety Tips")
+  - "Share Alert" button (reserved action, intercepted client-side — unchanged `share_alert` handling)
+- **Purpose**: The single, final output the entire wizard has been building toward
+- **Visual**: Map-forward, risk-colored accent, generous spacing around the headline
+- **Note**: Tapping ✕ clears the chip trail and local surface history, returning to Step 1 — the flow's only "start a new report" affordance.
 
-### Screen 8: Share Sheet
+### Screen 7: Share Sheet
 - **Description**:
   - Native Android share sheet
-  - Pre-filled text: "Conflict Alert: [transcription] at [location]. Risk: [level]. Stay safe. -Shared via Conflict Tracker"
+  - Pre-filled text: "Conflict Alert: [summary] at [location]. Risk: [level]. Stay safe. -Shared via Conflict Tracker"
   - Suggested apps: WhatsApp, Messenger, Twitter, SMS
   - Copy to clipboard option
 - **Purpose**: Distribute alerts to community
@@ -280,57 +270,41 @@ This document covers the complete UX design for MVP (v1.0) including:
 ### Flow 1: First-Time User Onboarding
 1. **Splash Screen** → Auto-load (2s)
 2. **Welcome Screen** → User reads purpose
-3. **Permissions Screen** → User grants location + microphone access
-4. **Tutorial Screen** → User swipes through 3 steps
-5. **Main App** → GPS detected, risk level assessed, appropriate state displayed
+3. **Tutorial Screen** → User swipes through 3 content-only steps (no permission prompts)
+4. **Report Wizard, Step 1** → User is dropped straight into their first report; GPS permission is requested here, in context, only if they tap "Use my location"
 
 **Alternative Path**: Skip onboarding
-- User can skip directly to main app
-- Permissions still required for core functionality
+- User can skip directly into the Report Wizard
+- No permissions are required just to view the Main App Shell's cached/default risk state — they're only requested inside the wizard, and only for the step that needs them
 
-**Error State**: Permissions denied
-- Show error: "Microphone access required for voice reports. You can still use text input."
-- Button: "Open Settings" to enable permissions OR "Use Text Instead"
+**Error State**: Permission denied mid-wizard
+- Location denied at Step 1 → falls back to "Choose my state" (`ChoicePicker`), flow continues unblocked
+- Microphone denied at Step 4 → "Speak" becomes disabled, "Write" remains available, flow continues unblocked
 
-### Flow 2: Report Conflict (Primary Flow - Voice)
-1. **Main App** → User sees current risk state
-2. **Press & Hold Microphone** → Recording starts, modal appears
-3. **Speak Report** → User says: "Large herd crossing river near my farm"
-4. **Release Microphone** → Recording stops, processing starts
-5. **AI Processing** → Transcription + risk assessment (10s max)
-6. **A2UI Update** → Dynamic canvas updates with report details
-7. **Confirmation** → User reviews transcription and risk level
-8. **Share** → User taps share, selects app, alert distributed
+### Flow 2: Report via the Guided Wizard (Primary Flow)
+1. **Main App** → User sees current risk state, taps the single "Report" CTA
+2. **Step 1 — Where?** → Taps "Use my location" (GPS permission requested first time) or "Choose my state"; chip trail gains one chip
+3. **Step 2 — What's happening?** → Taps one situation chip (herd sighting / moving toward farmland / confrontation / just checking); chip trail grows
+4. **Step 3 — Who's involved?** → Taps one chip (herders / farmers / both / not sure); chip trail grows
+5. **Step 4 — Add detail (optional)** → User may tap **Speak** (mic permission requested first time, then waveform + timer recording control in place) or **Write** (inline single-line field) or skip straight to Create
+6. **Create** → Fires the single Gemini call: accumulated chips + optional transcript/text → context block
+7. **Result** → `MapView` + risk headline + summary + action buttons + Share Alert render in one surface
+8. **Share** → User taps Share Alert, selects app, alert distributed
+9. **Close (✕)** → Clears chip trail and local surface history, returns to Step 1 for the next report
 
-**Alternative Path**: Long press cancelled
-- User releases outside microphone button
-- Recording cancelled, return to main app
+**Alternative Path**: Back navigation
+- Back walks to the previous already-rendered `Surface` locally — no extra Gemini call. Choosing something different on a re-visited step produces a fresh forward turn.
 
-**Error States**:
-- No microphone permission: Show permission request OR "Use Text Instead"
-- Network error: Cache report locally, sync later
-- Transcription failed: Show error, retry option OR "Try Text Input"
-
-### Flow 3: Report Conflict (Text Alternative)
-1. **Main App** → User sees current risk state
-2. **Tap Text Icon** → Input mode selection bottom sheet appears
-3. **Select Text** → User taps "⌨️ Type your report"
-4. **Type Report** → User enters: "Large herd crossing river near my farm"
-5. **Submit** → Text sent to AI (no transcription needed, ~5s faster)
-6. **A2UI Update** → Dynamic canvas updates with report details (same as voice)
-7. **Confirmation** → User reviews text and risk level
-8. **Share** → User taps share, selects app, alert distributed
-
-**Alternative Path**: Switch to voice
-- User can tap microphone icon in text field to switch to voice
-- Existing text preserved as fallback for voice input
+**Alternative Path**: Skip
+- Available on Steps 1–4; skipping a step just omits that chip. The final Create call still runs with whatever chips exist.
 
 **Error States**:
-- Empty input: Show validation "Please describe the conflict"
-- Input too long: Show error "Maximum 500 characters" OR auto-truncate
-- Network error: Cache text report locally, sync later
+- No location permission and no state chosen: user can still Skip Step 1 entirely — Gemini receives no location context
+- No microphone permission: "Speak" is disabled at Step 4, "Write" remains fully available
+- Network error at Create: cache the accumulated chips locally, queue for sync, show cached/offline result if available
+- Transcription failed (Speak used): show inline error at Step 4, offer "Write instead" without losing Steps 1–3's chips
 
-### Flow 4: View Map and Hotspots
+### Flow 3: View Map and Hotspots
 1. **Main App** → Map displayed with user location
 2. **Zoom In/Out** → User pinches to zoom
 3. **Tap Hotspot** → Details panel slides up from bottom
@@ -349,7 +323,7 @@ This document covers the complete UX design for MVP (v1.0) including:
 1. **App Launch (No Network)** → Offline mode activated
 2. **Cached View** → Last online state displayed
 3. **Cached Reports** → Previous 50 reports available
-4. **Record Report** → Voice report recorded, cached locally
+4. **Run the Wizard** → Steps 1–4 work identically offline (all tap-only, plus Speak/Write); Create queues the report locally instead of calling Gemini live
 5. **Network Returns** → Auto-sync cached reports
 6. **Fresh Data** → New reports and weather data loaded
 
@@ -517,7 +491,7 @@ GenUI requires a **UI Component Catalog** - a collection of reusable, composable
 #### 4. Input Components
 
 **MicrophoneButton** (`A2UI_MicrophoneButton`)
-- **Purpose**: Voice input for reports
+- **Purpose**: Voice input, now scoped to Wizard Step 4's optional enrichment
 - **Props**: `onPressed`, `onReleased`, `isRecording`, `disabled`
 - **States**:
   - `idle` (ready to record)
@@ -525,29 +499,44 @@ GenUI requires a **UI Component Catalog** - a collection of reusable, composable
   - `processing` (spinner)
   - `disabled` (no mic permission)
 - **Size**: 64x64dp (minimum touch target)
-- **Placement**: Persistent footer (center)
-- **Usage**: Primary report input
+- **Placement**: Inline, swapped in on Wizard Step 4 when "Speak" is tapped — **not** a persistent footer element anymore
+- **Usage**: Optional detail enrichment (Step 4 only)
 
-**TextInput** (`A2UI_TextInput`)
-- **Purpose**: Alternative text input
+**TextInput** (`A2UI_TextInput`, reused as `TextInputModal`)
+- **Purpose**: Optional detail enrichment as an alternative to Speak
 - **Props**: `hintText`, `maxLength`, `onSubmit`, `inputType`
 - **Features**:
-  - Multi-line support
+  - Single-line field (short detail, not a full report form)
   - Character counter
   - Clear button
   - Submit button
-- **Size**: Full width, 100dp height minimum
-- **Placement**: Modal or inline
-- **Usage**: Text report alternative
+- **Size**: Full width, single-line height
+- **Placement**: Inline, swapped in on Wizard Step 4 when "Write" is tapped
+- **Usage**: Optional detail enrichment (Step 4 only)
 
-**ChoiceSelector** (`A2UI_ChoiceSelector`)
-- **Purpose**: Select from predefined options
+**ChoicePicker** (`A2UI_ChoicePicker`)
+- **Purpose**: Tap-only selection for Wizard Steps 1–3 — the app's primary input mechanism
 - **Props**: `options`, `selected`, `onChanged`, `multiSelect`
 - **Variants**:
-  - `radio` (single selection)
-  - `checkbox` (multi-selection)
-  - `chips` (horizontal selection)
-- **Usage**: Risk level confirmation, input mode selection
+  - `radio` (single selection — used for Steps 2/3 today)
+  - `checkbox` (multi-selection — reserved for a future step, per the reference pattern)
+  - `chips` (horizontal selection — used for Step 1's state list)
+- **Usage**: Steps 1–3 of the Report Wizard
+
+**ChipTrail** (`A2UI_ChipTrail`)
+- **Purpose**: Native-chrome (not GenUI-rendered) running summary of every choice made so far in the wizard
+- **Props**: `chips` (ordered list of resolved-step labels)
+- **Features**:
+  - Accumulates one chip per resolved step
+  - Persists across Back navigation
+  - Wraps to multiple lines as chips accumulate
+- **Placement**: Top of every wizard screen, below the header/stepper
+- **Usage**: Orientation and memory aid across all 4 wizard steps
+
+**WizardStepper** (`A2UI_WizardStepper`)
+- **Purpose**: 4-dot progress indicator showing which wizard step is active/done
+- **Props**: `totalSteps`, `activeStep`, `completedSteps`
+- **Usage**: Top of every wizard screen, above the chip trail
 
 #### 5. Action Components
 
@@ -573,13 +562,11 @@ GenUI requires a **UI Component Catalog** - a collection of reusable, composable
 - **Usage**: Distribute alerts
 
 **ReportButton** (`A2UI_ReportButton`)
-- **Purpose**: Initiate new report
-- **Props**: `type`, `onPressed`
-- **States**:
-  - `voice` (microphone icon)
-  - `text` (keyboard icon)
-- **Placement**: Footer bar
-- **Usage**: Start report flow
+- **Purpose**: The single CTA on the Main App Shell that launches the Report Wizard
+- **Props**: `onPressed`
+- **States**: `idle`, `disabled` (rare — offline queue full)
+- **Placement**: Footer bar, replaces the old dual voice/text footer entirely
+- **Usage**: Entry point into Wizard Step 1 — no `type` prop, since voice/text are now internal to Step 4, not top-level choices
 
 #### 6. Feedback Components
 
@@ -695,34 +682,38 @@ GenUI requires a **UI Component Catalog** - a collection of reusable, composable
 
 ### Component Hierarchy & Composition
 
+The old single "Dynamic Canvas" tree is now split across two contexts: the **Report Wizard shell** (native chrome + one GenUI `Surface` per step) and the **Result surface** it produces.
+
+**Report Wizard shell** (native chrome wrapping each step's `Surface`):
+```
+Wizard Shell (native, not GenUI)
+├── A2UI_WizardStepper (4-dot progress)
+├── A2UI_ChipTrail (accumulated chips)
+└── Surface (GenUI, one per step — Back walks these locally)
+    ├── Step 1: A2UI_ChoicePicker (chips — "Use my location" / "Choose my state")
+    ├── Step 2: A2UI_ChoicePicker (radio — situation)
+    ├── Step 3: A2UI_ChoicePicker (radio — who's involved)
+    └── Step 4: A2UI_MicrophoneButton | A2UI_TextInput (mutually swapped, optional)
+```
+
+**Result surface** (rendered once, after "Create"):
 ```
 A2UI_Workspace (Root)
-├── A2UI_Container
-│   ├── A2UI_Header (Risk Level)
-│   │   ├── A2UI_RiskLevelIndicator
-│   │   └── A2UI_TextBlock (Status)
-│   │
-│   ├── A2UI_StatusBanner (if applicable)
-│   │
-│   ├── A2UI_MapView
-│   │   ├── A2UI_MapMarker (User Location)
-│   │   ├── A2UI_MapMarker (Conflict Hotspots)
-│   │   └── A2UI_MapOverlay (Weather)
-│   │
-│   ├── A2UI_ReportList (Recent Reports)
-│   │   └── A2UI_ReportCard (xN)
-│   │
-│   ├── A2UI_TextBlock (Instructions/Details)
-│   │
-│   └── A2UI_QuickActionBar
-│       ├── A2UI_ActionButton (Primary)
-│       └── A2UI_ActionButton (Secondary)
-│
-└── A2UI_Section (Footer)
-    ├── A2UI_ActionButton (Report)
-    ├── A2UI_MicrophoneButton
-    └── A2UI_ShareButton
+└── A2UI_Container
+    ├── A2UI_MapView
+    │   ├── A2UI_MapMarker (User Location)
+    │   └── A2UI_MapMarker (Conflict Hotspots)
+    ├── A2UI_Header (Risk Level)
+    │   ├── A2UI_RiskLevelIndicator
+    │   └── A2UI_TextBlock (Status)
+    ├── A2UI_TextBlock (1-2 sentence summary)
+    └── A2UI_QuickActionBar
+        ├── A2UI_ActionButton (Primary, Gemini-authored)
+        ├── A2UI_ActionButton (Secondary, Gemini-authored)
+        └── A2UI_ShareButton (reserved `share_alert` action)
 ```
+
+The Main App Shell's home-state Dynamic Canvas (Low/Medium/High/Offline, Screen 4) reuses the same Result-surface tree — it's the same component composition, just rendered from the last cached report instead of a fresh wizard run.
 
 ### GenUI Integration Requirements
 
@@ -828,8 +819,11 @@ A2UI_Workspace (Root)
 | ⭐⭐⭐⭐⭐ | A2UI_StatusBanner | Low | Alert messages |
 | ⭐⭐⭐⭐⭐ | A2UI_MapView | High | Core functionality |
 | ⭐⭐⭐⭐⭐ | A2UI_MapMarker | Medium | Location indicators |
-| ⭐⭐⭐⭐⭐ | A2UI_MicrophoneButton | Medium | Voice input |
-| ⭐⭐⭐⭐ | A2UI_TextInput | Medium | Text alternative |
+| ⭐⭐⭐⭐⭐ | A2UI_ChoicePicker | Medium | Primary input for Wizard Steps 1-3 |
+| ⭐⭐⭐⭐⭐ | A2UI_ChipTrail | Low | Native chrome, wizard orientation |
+| ⭐⭐⭐⭐⭐ | A2UI_WizardStepper | Low | Native chrome, wizard progress |
+| ⭐⭐⭐⭐ | A2UI_MicrophoneButton | Medium | Voice input, Step 4 only |
+| ⭐⭐⭐⭐ | A2UI_TextInput | Medium | Text alternative, Step 4 only |
 | ⭐⭐⭐⭐ | A2UI_ActionButton | Low | Generic button |
 | ⭐⭐⭐⭐ | A2UI_ShareButton | Medium | Social sharing |
 | ⭐⭐⭐⭐ | A2UI_TextBlock | Low | Text display |
@@ -866,9 +860,10 @@ A2UI_Workspace (Root)
 - **Skip Links**: Direct access to main content
 
 #### Alternative Input
-- **Voice Commands**: All actions available via voice
-- **Text Input**: All actions available via text (alternative to voice)
-- **Switching**: Easy to switch between voice and text mid-report
+- **Tap-First**: Steps 1–3 require no voice or text at all — every core decision is a tap
+- **Voice**: Available as optional Step 4 enrichment, for users who want to add nuance
+- **Text**: Available as an equal alternative to voice at Step 4, same validation, same result
+- **Switching**: Easy to switch between Speak and Write at Step 4 without losing Steps 1–3's chips
 - **Swipe Gestures**: Optional swipe navigation between screens
 - **Large Touch Areas**: Easy to tap even with limited dexterity
 
@@ -885,14 +880,12 @@ A2UI_Workspace (Root)
 
 ### Layout Adaptations
 - **Portrait**: 
-  - Static frame at top and bottom
-  - Dynamic canvas in center (80% of screen)
-  - Microphone button fixed at bottom
-  
+  - Main App Shell: static header/footer, Dynamic Canvas in center (80% of screen), single "Report" CTA fixed at bottom
+  - Wizard: stepper + chip trail fixed at top, step content fills center, Next/Back/Skip (or Create) fixed at bottom
+
 - **Landscape** (if supported):
-  - Static frame on left side
-  - Dynamic canvas on right (70% of screen)
-  - Microphone button floating
+  - Main App Shell: static frame on left side, Dynamic Canvas on right (70% of screen)
+  - Wizard: stepper + chip trail on left, step content on right
 
 ### Density Settings
 - **Default**: Standard spacing, medium-sized elements
@@ -916,6 +909,9 @@ A2UI_Workspace (Root)
 | High Risk | "CONFLICT DETECTED NEARBY! Take action now." | Urgent, direct |
 | Offline | "Working offline. Data from [time]." | Informative |
 | Error | "Could not connect. Try again later." | Helpful, not blaming |
+| Wizard step header | "Use Next to continue." | Instructional, unobtrusive |
+| Wizard Step 4 subhead | "Optional — Create works without this too." | Reassuring, low-pressure |
+| Wizard skip | "Skip" | Neutral, never guilt-inducing |
 
 ### Localization (Future)
 - **Primary**: English
@@ -930,20 +926,22 @@ A2UI_Workspace (Root)
 ### Usability Tests
 | Test | Participants | Metrics | Timeline |
 |------|-------------|---------|----------|
-| First-time use | 5 rural users | Time to complete report, error rate | Week 1 post-launch |
-| Voice reporting | 10 users | Accuracy of transcription, user satisfaction | Week 2 |
-| Text reporting | 8 users | Input speed, error rate, satisfaction | Week 2 |
-| Input method preference | 15 users | % choosing voice vs text, reasons | Week 3 |
-| Offline usage | 5 users | Ability to complete tasks offline | Week 3 |
+| First-time wizard completion | 5 rural users | Time to complete report, error rate, drop-off step | Week 1 post-launch |
+| Tap-only steps (1-3) | 10 users | Comprehension of chip options, selection accuracy | Week 1 |
+| Step 4 enrichment (Speak) | 10 users | Accuracy of transcription, user satisfaction | Week 2 |
+| Step 4 enrichment (Write) | 8 users | Input speed, error rate, satisfaction | Week 2 |
+| Enrichment method preference | 15 users | % choosing Speak vs Write vs Skip, reasons | Week 3 |
+| Offline usage | 5 users | Ability to complete the wizard offline | Week 3 |
 | Share flow | 5 users | Share completion rate, preferred platforms | Week 4 |
 
 ### Test Scenarios
-1. **Report a Conflict (Voice)**: User sees herd, reports via voice, shares alert
-2. **Report a Conflict (Text)**: User sees herd, reports via text, shares alert
-3. **Switch Input Methods**: User starts with voice, switches to text mid-report
-4. **Navigate Map**: User zooms, pans, taps hotspots
-5. **Offline Operation**: User turns off data, uses cached information
-6. **Permission Handling**: User denies microphone permission, uses text input instead
+1. **Complete the Wizard, Tap-Only**: User sees herd, taps through Steps 1-3, skips Step 4, sees Result, shares alert
+2. **Complete the Wizard with Speak**: User taps through Steps 1-3, uses Speak at Step 4, shares alert
+3. **Complete the Wizard with Write**: User taps through Steps 1-3, uses Write at Step 4, shares alert
+4. **Switch Enrichment Methods**: User taps Speak, then switches to Write at Step 4 without losing earlier chips
+5. **Navigate Map**: User zooms, pans, taps hotspots
+6. **Offline Operation**: User turns off data, completes the wizard using cached/queued state
+7. **Permission Handling**: User denies location at Step 1 (falls back to "Choose my state") and denies microphone at Step 4 (falls back to Write), completes the report either way
 
 ### Success Criteria
 - **Task Completion Rate**: >90% for core flows
@@ -1035,13 +1033,16 @@ A2UI_Workspace (Root)
 
 ### Glossary
 - **A2UI**: Agent-to-User Interface - Dynamic UI generated by AI
+- **Report Wizard**: The app's single reporting mechanism — a 4-step, tap-first flow (Where? / What's happening? / Who's involved? / Add detail) ending in one generated Result
+- **Chip Trail**: Native-chrome running summary of every choice made so far in the wizard
 - **Static Frame**: Non-changing parts of the UI (headers, footers)
-- **Dynamic Canvas**: Central area that changes based on context
-- **Voice-First**: Design principle prioritizing voice input over text
+- **Dynamic Canvas**: Central area that changes based on context; also the Main App Shell's home-state rendering of the last Result
+- **Guided, Tap-First**: Design principle prioritizing pre-written tap choices over free text/speech for the primary flow, with voice/text reserved for optional enrichment
 - **Offline-First**: Design principle prioritizing offline functionality
 
 ---
 
 *Document created: September 20, 2026*  
+*Last aligned to the Guided Report Wizard: September 21, 2026*  
 *Phase: 2 - Product Planning*  
 *Based on: idea/idea.md, idea/frontend_architecture_idea.md, brainstorm_docs/phase_2_prd.md, brainstorm_docs/phase_2_tech_architecture.md*

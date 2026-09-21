@@ -4,6 +4,8 @@
 
 This is the contract Track B (produces blueprints) and Track C (renders them) both build against, frozen now so those two tracks can run in parallel without waiting on each other.
 
+**Scope note (2026-09-21, post-MVP realignment)**: the app now has **two separate GenUI sessions**, not one — see `docs/report_wizard_ux_flow.md` and `docs/refactor.md`. Everything below (§1–§7) covers only the **Result-surface session**: the existing `.chat()`/`createOnly` flow that turns one context block into one risk-state screen, unchanged by the wizard work. The Guided Report Wizard that now precedes it (structured Where/What's-happening/Who's-involved/optional-detail steps) is a **separate, bounded `createAndUpdate`/data-bound session** with its own catalog subset and system prompt, specified in `docs/refactor.md` — do not assume anything below applies to it.
+
 ---
 
 ## 1. What genui actually gives us for free
@@ -23,7 +25,9 @@ This is the contract Track B (produces blueprints) and Track C (renders them) bo
 
 **Stretch, only if Track C has spare time after the MVP catalog works**: register one custom `CatalogItem` (e.g. `RiskBanner`, `level` enum prop) whose `widgetBuilder` picks a real background color from `AppColors` — small, additive, doesn't change the contract below, just gives Gemini one more component name it's allowed to use.
 
-**The live historical-hotspot map (`flutter_map`, Track A) is NOT part of the AI-generated surface.** No map widget exists in the basic catalog, and building a custom interactive-map `CatalogItem` is real effort we're not spending for the 00:00 checkpoint. The map stays a separate, statically-rendered widget (Track A owns it); the AI-generated `Surface` renders as its own section (e.g. a panel above/below the map, or the whole Dynamic Canvas when no map is in view) per the static-frame/dynamic-canvas split in the UX doc. Registering a custom `MapView` `CatalogItem` so Gemini can actually place markers inside its own surface is a plausible post-MVP enhancement, not required.
+**Superseded (2026-09-21)**: the paragraph below described the original MVP cut — map stays native, outside the AI-generated surface. Per `docs/report_wizard_ux_flow.md`'s Result screen and `brainstorm_docs/phase_2_ux_design.md`'s Component Hierarchy, **the map is now a required custom `CatalogItem` (`MapView`), embedded inside the AI-generated surface itself**, not a stretch goal. Register it once (`lib/core/genui/map_view_catalog_item.dart`), merge it into this catalog via `Catalog.copyWith(newItems: [mapViewCatalogItem])`, and merge the same item into the catalog used to build this file's `PromptBuilder.chat()` instruction (§4) so Gemini's system prompt advertises it. `MapView`'s `dataSchema` carries only a size hint (`variant: 'compact' | 'full'`) — Gemini never supplies coordinates or markers; the widget pulls the user's location and nearby historical conflicts itself from the same providers `ConflictMap` already uses (`currentLocationProvider`/`allConflictDataProvider`). Add one line to §3's "WHAT TO GENERATE" telling Gemini it may place a `MapView` component in the layout when spatially relevant.
+
+~~**The live historical-hotspot map (`flutter_map`, Track A) is NOT part of the AI-generated surface.** No map widget exists in the basic catalog, and building a custom interactive-map `CatalogItem` is real effort we're not spending for the 00:00 checkpoint. The map stays a separate, statically-rendered widget (Track A owns it); the AI-generated `Surface` renders as its own section (e.g. a panel above/below the map, or the whole Dynamic Canvas when no map is in view) per the static-frame/dynamic-canvas split in the UX doc. Registering a custom `MapView` `CatalogItem` so Gemini can actually place markers inside its own surface is a plausible post-MVP enhancement, not required.~~
 
 ## 3. Domain-specific `systemPromptFragments` (final text)
 
@@ -78,6 +82,10 @@ Build one screen (via createSurface + updateComponents) with, top to bottom:
    itself (see RESERVED EVENT NAMES) instead of sending it back to you, so
    always give it a "context" containing a short "summary" string (one
    sentence, suitable for sharing to WhatsApp/SMS) and the "riskLevel".
+5. Optionally, a "MapView" component when the report is spatially relevant
+   (place it near the top, above or below the headline) — you don't supply
+   coordinates or markers, the app fills those in itself. Omit it if the
+   screen doesn't benefit from a map (e.g. a brief safety-tips follow-up).
 
 TONE (match phase_2_ux_design.md's messaging examples):
 - LOW: calm, reassuring. E.g. "No immediate threats. Stay vigilant."
@@ -106,9 +114,12 @@ CONSTRAINTS:
 ## 4. Runtime wiring (for Track B)
 
 ```dart
+// Per §2's superseded-note: mapViewCatalogItem is merged into every catalog
+// built for this session — both the one used to render (SurfaceController)
+// and the one used to build Gemini's system prompt (PromptBuilder.chat).
 final catalog = BasicCatalogItems.asNoAssetCatalog(
   systemPromptFragments: [conflictTrackerPromptFragment], // §3 text above
-);
+).copyWith(newItems: [mapViewCatalogItem]);
 final promptBuilder = PromptBuilder.chat(catalog: catalog);
 final systemInstruction = promptBuilder.systemPromptJoined();
 
@@ -147,6 +158,8 @@ User tapped: "view_safety_tips" (context: {})
 — everything else (location, surfaceId, historical conflicts) still gets refreshed and re-sent.
 
 ## 6. Worked example (HIGH risk, matches idea.md's Ibrahim scenario)
+
+**Note**: this example predates the §2 map-in-catalog change and omits the optional `MapView` component for brevity — it's still valid as a fixture for the non-map parts of the tree (headline/icon/body/buttons/`share_alert`). A `MapView` entry would just be one more child id in `root`'s `children` list, with its own `{ "id": "map", "component": "MapView" }` definition (no props required).
 
 Gemini's expected text response (two fenced JSON blocks):
 

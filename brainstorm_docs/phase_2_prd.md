@@ -1,9 +1,9 @@
 # Product Requirements Document: Farmer-Herders Conflict Tracker
 
-**Version**: 1.0.0  
-**Last Updated**: September 20, 2026  
+**Version**: 1.1.0  
+**Last Updated**: September 21, 2026  
 **Phase**: 2 - Product Planning  
-**Status**: Draft  
+**Status**: Draft — realigned to the Guided Report Wizard (see `docs/report_wizard_ux_flow.md`)  
 **Author**: Based on idea/ and phase_1_approved.md
 
 ---
@@ -28,7 +28,7 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
 | Metric | Target | Measurement |
 |--------|--------|-------------|
 | Active users | 1,000+ | App installations |
-| Conflict reports submitted | 500+/month | Voice reports |
+| Conflict reports submitted | 500+/month | Reports completed via the Guided Wizard |
 | Alert sharing rate | 80% | Social media shares per report |
 | False positive rate | <10% | User feedback on alerts |
 | Offline usage | 60% | Sessions without network |
@@ -48,10 +48,11 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
   - Reactive responses after violence has already occurred
   - Complex tech interfaces are difficult to use
 - **User Journey**: 
-  1. Opens app → Sees location on map with risk level
-  2. Presses microphone → Reports herd sighting via voice
-  3. Sees dynamic UI update with alert details
-  4. Shares alert to community groups via social media
+  1. Opens app → Sees location on map with risk level → taps "Report"
+  2. Taps through the Guided Report Wizard: Where? → What's happening? → Who's involved? (all tap-only chips)
+  3. Optionally speaks or types a bit more detail, then taps Create
+  4. Sees the Result: map + risk headline + alert details
+  5. Shares alert to community groups via social media
 
 ### Persona 2: Musa - Herder Leader
 - **Demographics**: 38 years old, Male, No formal education, Herder, Kano State
@@ -66,7 +67,7 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
   1. Opens app → Sees cattle corridor map
   2. Receives alert about farming zones ahead
   3. Adjusts route to avoid conflict areas
-  4. Reports safe passage or issues to community
+  4. Reports safe passage or issues via the same Guided Report Wizard (taps "just checking my area" at Step 2 instead of a sighting)
 
 ### Persona 3: Amina - NGO Mediation Worker (Future)
 - **Demographics**: 35 years old, Female, University educated, NGO employee
@@ -83,9 +84,10 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
 
 | Feature | Description | User Stories | Priority | Acceptance Criteria | Dependencies |
 |---------|-------------|-------------|----------|---------------------|--------------|
-| **Voice Reporting** | Users can report conflicts via voice input | As Ibrahim, I want to speak my report so I don't need to type | **Must** | Voice transcribed accurately, report logged | firebase_ai, record |
-| **Text Reporting** | Users can report conflicts via text input as alternative | As a user, I want to type my report when voice is not convenient | **Should** | Text input submitted, processed same as voice | Flutter TextField |
-| **GPS Location** | App automatically detects user location | As a user, I want my location auto-detected so reports are accurate | **Must** | Location accurate within 50m, works offline | geolocator |
+| **Guided Report Wizard** | A 4-step, tap-first flow (Where? / What's happening? / Who's involved? / Add detail) is the app's single reporting mechanism, ending in one generated result | As Ibrahim, I want the app to walk me through a few taps so I never face a blank input | **Must** | All 4 steps navigable, chip trail accumulates correctly, Back/Skip work without extra Gemini calls | genui, firebase_ai |
+| **Voice Reporting** | Optional voice enrichment at the wizard's final step, additive on top of the structured chips | As Ibrahim, I want to speak extra detail so I don't need to type | **Must** | Voice transcribed accurately, appended to context, mic permission requested in-context | firebase_ai, record |
+| **Text Reporting** | Optional text enrichment at the wizard's final step, equal alternative to voice | As a user, I want to type extra detail when speaking is not convenient | **Should** | Text input submitted, processed same as voice | Flutter TextField |
+| **GPS Location** | App detects user location in-context at Wizard Step 1 (or falls back to a state picker) | As a user, I want my location auto-detected so reports are accurate | **Must** | Location accurate within 50m, works offline, permission requested only when "Use my location" is tapped | geolocator |
 | **Conflict Map** | Display conflict hotspots on interactive map | As a user, I want to see conflict zones on a map to avoid them | **Must** | Map loads in <3s, shows hotspots from dataset | flutter_map, latlong2 |
 | **Dynamic A2UI** | UI adapts based on risk level and context | As a user, I want the UI to show relevant actions for my situation | **Must** | UI changes within 2s of context change, offline-capable | genui, firebase_ai |
 | **Social Sharing** | Share alerts to any social media app | As a user, I want to share alerts via my preferred platform | **Must** | Share sheet opens, content pre-filled | share_plus |
@@ -99,33 +101,40 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
 
 ## 🔄 User Flows
 
-### Flow 1: Report Conflict (Primary Flow)
-1. **App Launch**: User opens app, GPS location detected
-2. **Risk Assessment**: App loads and displays current risk level (Low/Medium/High)
-3. **Voice Input**: User presses and holds microphone button
-4. **Audio Processing**: Audio streamed to firebase_ai for transcription
-5. **Context Enrichment**: Transcription + location + weather data sent to Gemini
-6. **A2UI Generation**: Gemini generates appropriate UI blueprint
-7. **UI Render**: genui renders dynamic interface with:
+### Flow 1: Report Conflict via the Guided Wizard (Primary Flow)
+The wizard *is* the reporting mechanism — the same 4-step sequence runs every time, first report or the hundredth. There is no separate raw voice/text entry point anymore.
+
+1. **App Launch**: User opens app, sees the current risk level (Low/Medium/High) for their last-known area, taps the single **"Report"** CTA
+2. **Step 1 — Where?**: Taps "Use my location" (GPS permission requested here, in context, first time only) or "Choose my state" (`ChoicePicker` fallback); chip trail records the result
+3. **Step 2 — What's happening?**: Taps one situation chip (herd sighting / moving toward farmland / active confrontation / just checking); chip trail grows
+4. **Step 3 — Who's involved?**: Taps one chip (herders & cattle / farmers / both / not sure); chip trail grows
+5. **Step 4 — Add detail (optional)**: Taps **Speak** (microphone permission requested here, in context, first time only) or **Write**, or skips straight to Create
+6. **Create**: Fires the single Gemini call — accumulated chips + optional transcript/text → context enrichment (location + weather + historical data) → A2UI blueprint generation
+7. **Result Render**: genui renders one surface with:
    - Risk level banner (color-coded)
    - Map with incident location
+   - 1-2 sentence summary
    - Action buttons (Share, Report to authorities, etc.)
 8. **Share Alert**: User taps share button, chooses social media app
+9. **Close (✕)**: Clears the chip trail and returns to Step 1, ready for the next report
+
+**Alternative Path**: Back navigation
+- Back walks to the previous already-rendered step locally — no extra Gemini call
+- Choosing something different on a re-visited step produces a fresh forward turn
+
+**Alternative Path**: Skip
+- Available on every step except the Result — skipping a step just omits that chip
+- The Create call still runs with whatever chips exist, even if every step was skipped
 
 **Alternative Path**: Offline mode
-- If no network: Use cached A2UI blueprint from last online session
-- Queue voice report for sync when network returns
-
-**Alternative Path**: Text input
-- User taps text input icon instead of microphone
-- User types report description
-- Submit button sends text directly to LLM (no transcription needed)
+- If no network: Use cached A2UI blueprint from last online session for the home state
+- The wizard still runs fully offline (all steps are local/tap-based); Create queues the report for sync when network returns
 
 **Error States**:
-- No GPS: Show manual location entry, default to last known location
-- No microphone permission: Show error, request permission OR show text input alternative
-- Network error: Show offline indicator, cache report locally
-- Empty input: Show validation error "Please enter a report"
+- No GPS and no state chosen: Step 1 can simply be skipped — Gemini receives no location context
+- No microphone permission: "Speak" is disabled at Step 4, "Write" remains fully available
+- Network error at Create: Show offline indicator, cache accumulated chips locally
+- Step 4 text/transcript empty: not an error — Step 4 is optional by design
 
 ### Flow 2: View Conflict Hotspots
 1. User opens app, map loads with current location
@@ -136,24 +145,7 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
 **Alternative Path**: Filter by date range
 **Error State**: Data loading error - show retry button
 
-### Flow 3: Text Report
-1. **Text Input Mode**: User taps text icon (alternative to microphone)
-2. **Type Report**: User enters description in text field
-3. **Submit**: User taps submit button
-4. **Processing**: Text sent directly to Gemini (no transcription needed)
-5. **A2UI Generation**: Same as voice flow - context enrichment, blueprint generation
-6. **UI Render**: Same as voice flow - dynamic interface with report details
-7. **Share**: Same sharing options as voice reports
-
-**Alternative Path**: Switch to voice
-- User can switch from text to voice mid-report
-- Text content preserved as fallback
-
-**Error States**:
-- Empty input: Show validation "Report cannot be empty"
-- Input too long: Truncate or show error (max 500 chars)
-
-### Flow 4: Receive Alert (Push Notification - Future)
+### Flow 3: Receive Alert (Push Notification - Future)
 1. Nearby user reports conflict
 2. System calculates proximity
 3. Alert notification sent to affected users
@@ -161,7 +153,7 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
 
 ---
 
-**Note**: Voice reporting is the primary, preferred method. Text input is provided as an alternative for users who prefer typing or when voice input is not available.
+**Note**: The Guided Report Wizard's tap-only chips (Steps 1-3) are the primary reporting mechanism — they carry the core structured signal with zero typing or speaking required. Voice and text at Step 4 are equally-weighted, optional enrichment on top of that structured signal, not competing primary paths. See `docs/report_wizard_ux_flow.md` for the full spec.
 
 ## 📊 Non-Functional Requirements
 
@@ -183,14 +175,14 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
 - **Screen Sizes**: 5" to 10" screens supported
 - **Orientation**: Portrait primary, landscape supported
 - **Accessibility**: 
-  - Voice-first interface for low-literacy users
+  - Guided, tap-first wizard interface for low-literacy users
   - High contrast mode support
   - Screen reader compatible
 
 ### Accessibility
 - **Compliance Level**: WCAG 2.1 AA (where applicable)
 - **Specific Requirements**:
-  - All functionality accessible via voice
+  - Every wizard step completable by tap alone; voice/text only ever required at the optional final step
   - Minimum touch target: 48x48dp
   - Color contrast ratio: 4.5:1 minimum
 
@@ -238,8 +230,11 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
 |-------|-------------|------|
 | app_open | App launched | timestamp, user_id (anonymous) |
 | location_detected | GPS fix acquired | lat, lng, accuracy |
-| voice_report_start | Recording started | timestamp |
-| voice_report_complete | Recording finished | duration, transcription |
+| wizard_step_completed | A wizard step was resolved (chip chosen or skipped) | step number, choice or "skipped" |
+| wizard_step_back | User navigated back a step | step number |
+| voice_report_start | Step 4 recording started | timestamp |
+| voice_report_complete | Step 4 recording finished | duration, transcription |
+| wizard_create | "Create" tapped, Gemini call fired | chips, has_voice, has_text |
 | risk_assessment | Risk level determined | level, confidence |
 | a2ui_render | Dynamic UI rendered | blueprint_id, timestamp |
 | share_alert | Alert shared | platform, content |
@@ -263,17 +258,18 @@ Empower rural Nigerian communities with a predictive, AI-powered early-warning s
 ### MVP (v1.0) - Hackathon Submission
 **Timeline**: September 21, 2026
 **Features**:
-- [ ] Voice reporting with firebase_ai
-- [ ] GPS location detection
+- [ ] Guided Report Wizard (4-step, tap-first, chip trail, in-context permissions)
+- [ ] Voice/text enrichment at Wizard Step 4 via firebase_ai
+- [ ] GPS location detection (Wizard Step 1)
 - [ ] Conflict hotspot map
-- [ ] Dynamic A2UI interface
+- [ ] Dynamic A2UI interface (Wizard Result surface)
 - [ ] Social media sharing
 - [ ] Offline caching
 - [ ] Weather context integration
 
 **Success Criteria**:
 - App installable via Firebase App Distribution
-- Core user flow works (voice report → A2UI → share)
+- Core user flow works (Guided Wizard → Result → share)
 - Offline functionality verified
 - Demo video created
 
