@@ -72,7 +72,8 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: ReportWizardRoute.path,
         name: ReportWizardRoute.name,
-        builder: (context, state) => const ReportWizardScreen(),
+        builder: (context, state) =>
+            ReportWizardScreen(onExit: () => HomeRoute.go(context)),
       ),
     ],
   );

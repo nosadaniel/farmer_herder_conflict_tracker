@@ -1,13 +1,14 @@
 name: Deploy Android (Firebase App Distribution)
 
-# Per task.md's "Planned CI/CD redesign" (now implemented): auto-deploys on
-# every push to main, gated by a GitHub Environment. Until `android-production`
-# has required reviewers configured (Settings -> Environments — see task.md
-# "Your responsibilities"), this environment has no protection rules, so the
-# job just runs immediately, same as before. Once reviewers are added, this
-# becomes a real reviewed-deployment gate without touching this file again.
-# workflow_dispatch is kept as a manual fallback (e.g. re-deploy an old
-# commit without a new push).
+# Per task.md's CI/CD redesign: `dev` is the everyday working branch (see
+# ci.yml); `main` only moves via a reviewed PR merge from `dev` (branch
+# protection — see task.md "Your responsibilities"), and that merge is what
+# triggers this workflow. The PR review is the primary manual-review gate.
+# `environment: android-production` is an optional second gate on top of
+# that — until it has required reviewers configured (Settings ->
+# Environments), it has no protection rules, so the job runs immediately
+# once gate passes. workflow_dispatch is kept as a manual fallback (e.g.
+# re-deploy an old commit without a new push).
 on:
   push:
     branches: [main]

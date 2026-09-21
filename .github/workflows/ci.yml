@@ -1,13 +1,19 @@
 name: CI
 
-# Live from Phase 0 so every Phase 1 track's sync/merge gets immediate
-# feedback if it broke the build. Thin wrapper only — all real steps live in
-# _build_test.yml (reused by the deploy workflows too, so this is the exact
-# gate a deploy has to pass).
+# `dev` is the working branch — every push there gets immediate feedback via
+# this gate. `main` is the release branch: it only moves via a reviewed PR
+# from `dev` (branch-protected, see task.md "Your responsibilities"), which
+# is what this workflow's `pull_request` trigger checks before merge is
+# allowed. Deploy workflows (deploy-android.yml/deploy-web.yml) trigger
+# separately on push to `main` — merging the PR is the manual-review step
+# that leads to a deploy, not this workflow. Thin wrapper only — all real
+# steps live in _build_test.yml (reused by the deploy workflows too, so this
+# is the exact gate a deploy has to pass).
 on:
   push:
-    branches: [main]
+    branches: [dev]
   pull_request:
+    branches: [main]
 
 jobs:
   build_test:

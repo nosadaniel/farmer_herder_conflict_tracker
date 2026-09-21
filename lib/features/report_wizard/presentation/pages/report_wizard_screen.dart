@@ -16,7 +16,18 @@ import '../providers/report_wizard_controller.dart';
 import '../widgets/wizard_chip_trail.dart';
 
 class ReportWizardScreen extends ConsumerStatefulWidget {
-  const ReportWizardScreen({super.key});
+  const ReportWizardScreen({this.onExit, super.key});
+
+  /// Called by Step 1's leading back arrow. Both entry points (onboarding's
+  /// "Get Started" and `MainScreen`'s "Report" CTA) reach this screen via
+  /// `GoRouter.go(...)`, which replaces rather than pushes — so there is no
+  /// previous page for `Navigator.maybePop()` to return to. Defaults to
+  /// `maybePop()` anyway (harmless no-op in that case, and exercisable in
+  /// widget tests without a `GoRouter` ancestor); the real app wires this to
+  /// `HomeRoute.go(context)` at the route builder, mirroring how
+  /// `WelcomeScreen`/`TutorialScreen` take navigation callbacks instead of
+  /// importing `app/routing` directly.
+  final VoidCallback? onExit;
 
   @override
   ConsumerState<ReportWizardScreen> createState() => _ReportWizardScreenState();
@@ -55,7 +66,7 @@ class _ReportWizardScreenState extends ConsumerState<ReportWizardScreen> {
       );
     }
 
-    return _WizardStepMode(wizardState: wizardState);
+    return _WizardStepMode(wizardState: wizardState, onExit: widget.onExit);
   }
 
   void _showStatePicker(BuildContext context, WidgetRef ref) {
@@ -92,9 +103,10 @@ class _ReportWizardScreenState extends ConsumerState<ReportWizardScreen> {
 /// step's `Surface` (or a skeleton while it's generating) + Back/Next/Skip
 /// (or, on Step 4, Skip-this-step/Create/Back).
 class _WizardStepMode extends ConsumerWidget {
-  const _WizardStepMode({required this.wizardState});
+  const _WizardStepMode({required this.wizardState, this.onExit});
 
   final ReportWizardState wizardState;
+  final VoidCallback? onExit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -105,7 +117,7 @@ class _WizardStepMode extends ConsumerWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           tooltip: 'Exit',
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: onExit ?? () => Navigator.of(context).maybePop(),
         ),
         title: Text(step.title),
       ),

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/routing/app_router.dart';
 import 'app/wiring/gemini_send_handler.dart';
+import 'core/config/env.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 
@@ -20,16 +21,30 @@ void main() async {
   // enforcement to "Unenforced" there instead (faster, no token needed) if
   // you don't need enforcement for the hackathon demo.
   //
-  // Only Android has a registered debug provider so far. `activate()` on
-  // web defaults its web provider to ReCaptchaV3Provider with no site key,
-  // which throws (`Cannot read properties of null (reading 'initialize')`)
-  // before the app even renders — so skip activation on web until a
-  // reCAPTCHA site key is configured for the web app in Firebase Console.
-  if (!kIsWeb) {
-    await FirebaseAppCheck.instance.activate(
-      providerAndroid: const AndroidDebugProvider(),
-    );
-  }
+  // `activate()`'s web provider (ReCaptchaV3Provider) needs a real site key
+  // — without one it throws (`Cannot read properties of null (reading
+  // 'initialize')`) before the app even renders. ReCaptchaV3Provider is also
+  // a *production* provider: using it in debug/profile builds would either
+  // fail (no site key configured for local dev) or burn real reCAPTCHA
+  // quota against a key meant for the deployed site. So web debug/profile
+  // builds use `WebDebugProvider()` instead (same idea as
+  // `AndroidDebugProvider` below — auto-generates a debug token printed to
+  // the browser console on first run; register it under Firebase Console ->
+  // App Check -> Manage debug tokens). Only `kReleaseMode` web builds use
+  // the real `ReCaptchaV3Provider(Env.recaptchaSiteKey)`, and only when a
+  // site key is actually configured (via `--dart-define-from-file=.env`,
+  // see `.env.example`) — otherwise `null`, so a release web build without
+  // a configured key still boots instead of throwing.
+  await FirebaseAppCheck.instance.activate(
+    providerAndroid: const AndroidDebugProvider(),
+    providerWeb: !kIsWeb
+        ? null
+        : kReleaseMode
+        ? (Env.hasRecaptchaSiteKey
+              ? ReCaptchaV3Provider(Env.recaptchaSiteKey)
+              : null)
+        : WebDebugProvider(),
+  );
   // Sentry wiring (lib/core/config/env.dart's Env.sentryDsn) lands here if
   // time allows — see task.md cut list.
   runApp(

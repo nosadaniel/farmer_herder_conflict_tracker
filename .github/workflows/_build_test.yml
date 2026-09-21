@@ -38,9 +38,6 @@ jobs:
 
       - uses: ./.github/actions/setup-flutter
 
-      - name: Generate code (Drift/Riverpod)
-        run: dart run build_runner build --delete-conflicting-outputs
-
       - run: flutter analyze
 
       - run: dart format --output=none --set-exit-if-changed .

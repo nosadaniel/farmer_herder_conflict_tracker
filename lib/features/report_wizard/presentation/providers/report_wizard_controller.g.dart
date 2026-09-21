@@ -42,7 +42,7 @@ final class ReportWizardControllerProvider
 }
 
 String _$reportWizardControllerHash() =>
-    r'9b11bd4cc345f4cb1bed20484348a1149359ee56';
+    r'4c9774e39bf4b09001fbe8a9085c0ae8c42ffa67';
 
 abstract class _$ReportWizardController extends $Notifier<ReportWizardState> {
   ReportWizardState build();
