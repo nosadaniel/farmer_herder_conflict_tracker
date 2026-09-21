@@ -74,36 +74,69 @@ class ReportSubmissionController extends _$ReportSubmissionController {
     Map<String, dynamic> actionContext,
   ) => _run(actionEventName: actionName, actionContext: actionContext);
 
+  /// Called by the guided Report Wizard (`lib/features/report_wizard/**`)
+  /// when the user taps "Create" — structured answers instead of a
+  /// freeform voice/text report. The wizard resolves its own location
+  /// (real GPS it already obtained, or a static state-centroid lookup) and
+  /// always passes concrete [lat]/[lng] through, bypassing the
+  /// `currentLocationProvider` GPS-resolution path used by
+  /// [submitVoice]/[submitText]/[handleActionFollowUp].
+  Future<void> submitStructured({
+    required Map<String, String> wizardAnswers,
+    double? lat,
+    double? lng,
+    String? placeName,
+  }) => _run(
+    wizardAnswers: wizardAnswers,
+    overrideLat: lat,
+    overrideLng: lng,
+    placeName: placeName,
+  );
+
   Future<void> _run({
     Uint8List? audioBytes,
     String? reportText,
     String? actionEventName,
     Map<String, dynamic>? actionContext,
+    Map<String, String>? wizardAnswers,
+    double? overrideLat,
+    double? overrideLng,
+    String? placeName,
   }) async {
     state = const ReportProcessing();
     _log.i(
       'ReportSubmissionController._run start '
       '(audio=${audioBytes != null}, text=${reportText != null}, '
-      'action=$actionEventName)',
+      'action=$actionEventName, wizard=${wizardAnswers != null})',
     );
     try {
-      final location = await ref.read(currentLocationProvider.future);
-      final (lat, lng) = switch (location) {
-        AppLocationKnown(:final latitude, :final longitude) => (
-          latitude,
-          longitude,
-        ),
-        AppLocationUnknown() => (9.0, 8.5), // Middle Belt fallback centroid
-      };
-      _log.i('Resolved location: $location -> ($lat, $lng)');
+      final double lat;
+      final double lng;
+      if (overrideLat != null && overrideLng != null) {
+        lat = overrideLat;
+        lng = overrideLng;
+        _log.i('Using caller-supplied location: ($lat, $lng)');
+      } else {
+        final location = await ref.read(currentLocationProvider.future);
+        (lat, lng) = switch (location) {
+          AppLocationKnown(:final latitude, :final longitude) => (
+            latitude,
+            longitude,
+          ),
+          AppLocationUnknown() => (9.0, 8.5), // Middle Belt fallback centroid
+        };
+        _log.i('Resolved location: $location -> ($lat, $lng)');
+      }
 
       final params = SubmitReportParams(
         lat: lat,
         lng: lng,
+        placeName: placeName,
         audioBytes: audioBytes,
         reportText: reportText,
         actionEventName: actionEventName,
         actionContext: actionContext,
+        wizardAnswers: wizardAnswers,
         getNearbyConflicts: _nearbyConflictsAsMaps,
       );
 
@@ -128,13 +161,16 @@ class ReportSubmissionController extends _$ReportSubmissionController {
               fullBlueprint,
               const Duration(days: 7),
             );
-        if (reportText != null || audioBytes != null) {
+        if (reportText != null || audioBytes != null || wizardAnswers != null) {
           await ref
               .read(reportRepositoryProvider)
               .saveReport(
                 latitude: lat,
                 longitude: lng,
-                transcription: reportText ?? '(voice report)',
+                transcription:
+                    wizardAnswers?.values.join(' ') ??
+                    reportText ??
+                    '(voice report)',
                 riskLevel: 'unknown',
                 a2uiBlueprint: fullBlueprint,
               );
