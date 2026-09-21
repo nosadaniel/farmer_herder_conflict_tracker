@@ -89,7 +89,10 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tap Report below to log what you see.'), findsOneWidget);
+      expect(
+        find.text('Tap Report below to log what you see.'),
+        findsOneWidget,
+      );
 
       // MainScreen's "Report" CTA must also reach the wizard.
       await tester.tap(find.widgetWithText(ElevatedButton, 'Report'));
