@@ -9,6 +9,7 @@ import 'package:firebase_ai/firebase_ai.dart';
 import 'package:genui/genui.dart';
 
 import '../../../../../core/errors/exceptions.dart';
+import '../../../../../core/genui/map_view_catalog_item.dart';
 import 'conflict_tracker_prompt.dart';
 import 'gemini_model_client.dart';
 
@@ -21,8 +22,9 @@ import 'gemini_model_client.dart';
 ///    transcription and UI-generation stay independently testable.
 /// 2. [generateSurfaceStream] — the full system-prompted A2UI-generation
 ///    call. The system instruction is built via `PromptBuilder.chat()`
-///    (from `genui`) using `BasicCatalogItems.asNoAssetCatalog()` as the
-///    catalog plus [conflictTrackerPromptFragment] (contract doc §3,
+///    (from `genui`) using `BasicCatalogItems.asNoAssetCatalog()` plus the
+///    custom `MapView` `CatalogItem` (contract doc §2's superseded-note) as
+///    the catalog, plus [conflictTrackerPromptFragment] (contract doc §3,
 ///    verbatim) as the domain-specific fragment. The response is streamed
 ///    back to the caller exactly as Gemini emits it (fenced ```json blocks).
 ///
@@ -51,7 +53,7 @@ class GeminiRemoteDataSource {
 
     final catalog = BasicCatalogItems.asNoAssetCatalog(
       systemPromptFragments: [conflictTrackerPromptFragment],
-    );
+    ).copyWith(newItems: [mapViewCatalogItem]);
     final promptBuilder = PromptBuilder.chat(catalog: catalog);
     final surfaceModel = ai.generativeModel(
       model: modelName,

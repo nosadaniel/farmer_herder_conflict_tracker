@@ -20,6 +20,10 @@ dependencies:
 
   # --- Dynamic presentation engine (A2UI) ---
   genui: 0.10.3
+  # Used directly by lib/core/genui/map_view_catalog_item.dart to build the
+  # MapView CatalogItem's dataSchema, matching genui's own catalog items'
+  # usage pattern. Version pinned to what genui 0.10.3 already resolves.
+  json_schema_builder: 0.1.7
 
   # --- Geospatial & open maps ---
   flutter_map: 8.3.2
