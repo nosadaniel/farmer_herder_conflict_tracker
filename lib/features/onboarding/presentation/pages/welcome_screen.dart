@@ -34,13 +34,13 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               Text(
-                'Welcome to Conflict Tracker',
+                'Know Before Trouble Arrives',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineLarge,
               ),
               const SizedBox(height: 16),
               Text(
-                'Protect your community, report threats',
+                'Speak your report. Warn your neighbors. No typing needed.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
