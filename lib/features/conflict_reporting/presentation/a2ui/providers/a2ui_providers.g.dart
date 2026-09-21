@@ -11,7 +11,9 @@ part of 'a2ui_providers.dart';
 /// The catalog used to render AI-generated surfaces.
 ///
 /// Per docs/a2ui_gemini_contract.md §2: MVP renders every risk state with
-/// only the basic (no-asset) catalog — no custom `CatalogItem`s.
+/// the basic (no-asset) catalog plus one required custom `CatalogItem`,
+/// `MapView` (see §2's superseded-note) — Gemini can place a live conflict
+/// map inside its own generated surface.
 
 @ProviderFor(a2uiCatalog)
 final a2uiCatalogProvider = A2uiCatalogProvider._();
@@ -19,7 +21,9 @@ final a2uiCatalogProvider = A2uiCatalogProvider._();
 /// The catalog used to render AI-generated surfaces.
 ///
 /// Per docs/a2ui_gemini_contract.md §2: MVP renders every risk state with
-/// only the basic (no-asset) catalog — no custom `CatalogItem`s.
+/// the basic (no-asset) catalog plus one required custom `CatalogItem`,
+/// `MapView` (see §2's superseded-note) — Gemini can place a live conflict
+/// map inside its own generated surface.
 
 final class A2uiCatalogProvider
     extends $FunctionalProvider<Catalog, Catalog, Catalog>
@@ -27,7 +31,9 @@ final class A2uiCatalogProvider
   /// The catalog used to render AI-generated surfaces.
   ///
   /// Per docs/a2ui_gemini_contract.md §2: MVP renders every risk state with
-  /// only the basic (no-asset) catalog — no custom `CatalogItem`s.
+  /// the basic (no-asset) catalog plus one required custom `CatalogItem`,
+  /// `MapView` (see §2's superseded-note) — Gemini can place a live conflict
+  /// map inside its own generated surface.
   A2uiCatalogProvider._()
     : super(
         from: null,
@@ -61,7 +67,7 @@ final class A2uiCatalogProvider
   }
 }
 
-String _$a2uiCatalogHash() => r'376ceadc74d5037aca7dfe0b48e6c1a68e0f1600';
+String _$a2uiCatalogHash() => r'3ff0c12f6a93e8c6b2c53b0d993b18f12f9ad852';
 
 /// The seam through which the real Gemini call is plugged in.
 ///

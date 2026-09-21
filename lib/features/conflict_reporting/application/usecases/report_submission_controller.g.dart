@@ -44,7 +44,7 @@ final class ReportSubmissionControllerProvider
 }
 
 String _$reportSubmissionControllerHash() =>
-    r'bd933850d751797dd1846a9ae60edc2e7177eb63';
+    r'c2b42cb7c5944fb0a50b7afebe9418d73a7b6ecc';
 
 abstract class _$ReportSubmissionController
     extends $Notifier<ReportSubmissionState> {

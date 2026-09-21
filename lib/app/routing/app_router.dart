@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../features/onboarding/application/usecases/onboarding_controller.dart';
-import '../../features/onboarding/presentation/pages/permissions_screen.dart';
 import '../../features/onboarding/presentation/pages/tutorial_screen.dart';
 import '../../features/onboarding/presentation/pages/welcome_screen.dart';
+import '../../features/report_wizard/presentation/pages/report_wizard_screen.dart';
 import '../main_screen.dart';
 import 'app_routes.dart';
 
@@ -20,8 +20,10 @@ part 'app_router.g.dart';
 /// Route tree (see app_routes.dart for the path-naming rationale):
 /// - `/` -> [MainScreen] ([HomeRoute])
 /// - `/onboarding` -> [WelcomeScreen] ([OnboardingWelcomeRoute])
-/// - `/onboarding/permissions` -> [PermissionsScreen] ([OnboardingPermissionsRoute])
 /// - `/onboarding/tutorial` -> [TutorialScreen] ([OnboardingTutorialRoute])
+/// - `/report` -> [ReportWizardScreen] ([ReportWizardRoute]) — the Guided
+///   Report Wizard (task.md Phase 5), reached from onboarding's final "Get
+///   Started" and from [HomeRoute]'s "Report" CTA alike.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
   final onboardedAsync = ref.watch(onboardingControllerProvider);
@@ -52,23 +54,25 @@ GoRouter appRouter(Ref ref) {
         path: OnboardingWelcomeRoute.path,
         name: OnboardingWelcomeRoute.name,
         builder: (context, state) => WelcomeScreen(
-          onStart: () => OnboardingPermissionsRoute.go(context),
+          onStart: () => OnboardingTutorialRoute.go(context),
           onSkip: () => _completeOnboardingAndGoHome(context, ref),
-        ),
-      ),
-      GoRoute(
-        path: OnboardingPermissionsRoute.path,
-        name: OnboardingPermissionsRoute.name,
-        builder: (context, state) => PermissionsScreen(
-          onContinue: () => OnboardingTutorialRoute.go(context),
         ),
       ),
       GoRoute(
         path: OnboardingTutorialRoute.path,
         name: OnboardingTutorialRoute.name,
         builder: (context, state) => TutorialScreen(
-          onGetStarted: () => _completeOnboardingAndGoHome(context, ref),
+          // Per docs/report_wizard_ux_flow.md: onboarding ends by dropping
+          // the user straight into the wizard for their first report, not
+          // home — Skip (above) still goes home since that's an explicit
+          // "no tour" opt-out, not an ask to report immediately.
+          onGetStarted: () => _completeOnboardingAndGoToWizard(context, ref),
         ),
+      ),
+      GoRoute(
+        path: ReportWizardRoute.path,
+        name: ReportWizardRoute.name,
+        builder: (context, state) => const ReportWizardScreen(),
       ),
     ],
   );
@@ -84,4 +88,20 @@ Future<void> _completeOnboardingAndGoHome(BuildContext context, Ref ref) async {
     // Best-effort only.
   }
   if (context.mounted) HomeRoute.go(context);
+}
+
+/// Same best-effort completion as [_completeOnboardingAndGoHome], but for
+/// the "Get Started" exit which per the UX doc goes straight into the
+/// wizard for the user's first report rather than to the (now report-less)
+/// home map screen.
+Future<void> _completeOnboardingAndGoToWizard(
+  BuildContext context,
+  Ref ref,
+) async {
+  try {
+    await ref.read(onboardingControllerProvider.notifier).complete();
+  } catch (_) {
+    // Best-effort only.
+  }
+  if (context.mounted) ReportWizardRoute.go(context);
 }

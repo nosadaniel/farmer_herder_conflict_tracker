@@ -17,8 +17,10 @@ part of 'app_router.dart';
 /// Route tree (see app_routes.dart for the path-naming rationale):
 /// - `/` -> [MainScreen] ([HomeRoute])
 /// - `/onboarding` -> [WelcomeScreen] ([OnboardingWelcomeRoute])
-/// - `/onboarding/permissions` -> [PermissionsScreen] ([OnboardingPermissionsRoute])
 /// - `/onboarding/tutorial` -> [TutorialScreen] ([OnboardingTutorialRoute])
+/// - `/report` -> [ReportWizardScreen] ([ReportWizardRoute]) — the Guided
+///   Report Wizard (task.md Phase 5), reached from onboarding's final "Get
+///   Started" and from [HomeRoute]'s "Report" CTA alike.
 
 @ProviderFor(appRouter)
 final appRouterProvider = AppRouterProvider._();
@@ -32,8 +34,10 @@ final appRouterProvider = AppRouterProvider._();
 /// Route tree (see app_routes.dart for the path-naming rationale):
 /// - `/` -> [MainScreen] ([HomeRoute])
 /// - `/onboarding` -> [WelcomeScreen] ([OnboardingWelcomeRoute])
-/// - `/onboarding/permissions` -> [PermissionsScreen] ([OnboardingPermissionsRoute])
 /// - `/onboarding/tutorial` -> [TutorialScreen] ([OnboardingTutorialRoute])
+/// - `/report` -> [ReportWizardScreen] ([ReportWizardRoute]) — the Guided
+///   Report Wizard (task.md Phase 5), reached from onboarding's final "Get
+///   Started" and from [HomeRoute]'s "Report" CTA alike.
 
 final class AppRouterProvider
     extends $FunctionalProvider<GoRouter, GoRouter, GoRouter>
@@ -47,8 +51,10 @@ final class AppRouterProvider
   /// Route tree (see app_routes.dart for the path-naming rationale):
   /// - `/` -> [MainScreen] ([HomeRoute])
   /// - `/onboarding` -> [WelcomeScreen] ([OnboardingWelcomeRoute])
-  /// - `/onboarding/permissions` -> [PermissionsScreen] ([OnboardingPermissionsRoute])
   /// - `/onboarding/tutorial` -> [TutorialScreen] ([OnboardingTutorialRoute])
+  /// - `/report` -> [ReportWizardScreen] ([ReportWizardRoute]) — the Guided
+  ///   Report Wizard (task.md Phase 5), reached from onboarding's final "Get
+  ///   Started" and from [HomeRoute]'s "Report" CTA alike.
   AppRouterProvider._()
     : super(
         from: null,
@@ -82,4 +88,4 @@ final class AppRouterProvider
   }
 }
 
-String _$appRouterHash() => r'71216b08c4e5a438ccb64244a0f9eeb2f715629b';
+String _$appRouterHash() => r'408154503b48b38079991027fc343c763bb2f02e';

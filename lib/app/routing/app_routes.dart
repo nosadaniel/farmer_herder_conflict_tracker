@@ -15,8 +15,10 @@ import 'package:go_router/go_router.dart';
 /// of our routes take path parameters.
 ///
 /// Path naming strategy: nested paths mirror the onboarding flow's actual
-/// screen sequence (`/onboarding` -> `/onboarding/permissions` ->
-/// `/onboarding/tutorial`), so the URL structure documents the flow.
+/// screen sequence (`/onboarding` -> `/onboarding/tutorial`), so the URL
+/// structure documents the flow. `/report` (the Guided Report Wizard,
+/// task.md Phase 5) is top-level rather than nested under onboarding since
+/// it's reachable from both onboarding's end and [HomeRoute] alike.
 abstract final class HomeRoute {
   static const String path = '/';
   static const String name = 'home';
@@ -31,16 +33,20 @@ abstract final class OnboardingWelcomeRoute {
   static void go(BuildContext context) => context.go(path);
 }
 
-abstract final class OnboardingPermissionsRoute {
-  static const String path = '/onboarding/permissions';
-  static const String name = 'onboardingPermissions';
+abstract final class OnboardingTutorialRoute {
+  static const String path = '/onboarding/tutorial';
+  static const String name = 'onboardingTutorial';
 
   static void go(BuildContext context) => context.go(path);
 }
 
-abstract final class OnboardingTutorialRoute {
-  static const String path = '/onboarding/tutorial';
-  static const String name = 'onboardingTutorial';
+/// The Guided Report Wizard (task.md Phase 5) — the app's single reporting
+/// mechanism, replacing the old persistent mic/keyboard footer. Reached both
+/// from onboarding's final "Get Started" (first-ever report) and from
+/// [HomeRoute]'s "Report" CTA (every report after that).
+abstract final class ReportWizardRoute {
+  static const String path = '/report';
+  static const String name = 'reportWizard';
 
   static void go(BuildContext context) => context.go(path);
 }

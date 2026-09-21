@@ -177,7 +177,7 @@ class _A2uiIdlePrompt extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Press and hold the mic, or type, to report what you see.',
+              'Tap Report below to log what you see.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

@@ -7,12 +7,11 @@ import '../core/theme/app_colors.dart';
 /// (A2UI/GenUI) owns the contents of. This widget only owns the shell —
 /// it does not know about risk levels, blueprints, or voice/text state.
 ///
-/// [footer] is composed by the caller (Phase 2 integration) — originally
-/// this widget rendered its own hardcoded mic button driven by callbacks,
-/// which duplicated Track B's real `MicrophoneButton` (which owns its own
-/// recording UI/`AudioRecorder`). Accepting a `Widget` here instead lets the
-/// caller drop the real `MicrophoneButton` + text-input trigger in directly,
-/// with no duplicate mic-button implementation.
+/// [footer] is composed by the caller. Originally this held the real
+/// `MicrophoneButton` + text-input trigger directly; as of task.md Phase 5
+/// that persistent mic/keyboard footer was replaced by a single "Report" CTA
+/// that launches the Guided Report Wizard (`lib/features/report_wizard/`) —
+/// this widget still only owns the shell, not what's in the footer slot.
 class AppShell extends StatelessWidget {
   const AppShell({
     required this.dynamicCanvas,
