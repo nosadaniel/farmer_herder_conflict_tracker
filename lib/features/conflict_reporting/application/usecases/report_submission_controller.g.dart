@@ -8,48 +8,21 @@ part of 'report_submission_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Orchestrates the end-to-end report-submission flow: GPS -> nearby
-/// historical conflicts -> Firebase AI (via [SubmitReport]) -> A2UI
-/// blueprint streamed into genui's transport -> cached for offline
-/// rehydration.
-///
-/// Both [submitVoice]/[submitText] (called directly by the mic button /
-/// text modal) and [handleActionFollowUp] (called by the real
-/// `a2uiSendHandlerProvider` implementation for button-tap follow-ups, see
-/// lib/app/wiring/gemini_send_handler.dart) funnel through [_run].
 
 @ProviderFor(ReportSubmissionController)
 final reportSubmissionControllerProvider =
     ReportSubmissionControllerProvider._();
 
-/// Orchestrates the end-to-end report-submission flow: GPS -> nearby
-/// historical conflicts -> Firebase AI (via [SubmitReport]) -> A2UI
-/// blueprint streamed into genui's transport -> cached for offline
-/// rehydration.
-///
-/// Both [submitVoice]/[submitText] (called directly by the mic button /
-/// text modal) and [handleActionFollowUp] (called by the real
-/// `a2uiSendHandlerProvider` implementation for button-tap follow-ups, see
-/// lib/app/wiring/gemini_send_handler.dart) funnel through [_run].
 final class ReportSubmissionControllerProvider
     extends
         $NotifierProvider<ReportSubmissionController, ReportSubmissionState> {
-  /// Orchestrates the end-to-end report-submission flow: GPS -> nearby
-  /// historical conflicts -> Firebase AI (via [SubmitReport]) -> A2UI
-  /// blueprint streamed into genui's transport -> cached for offline
-  /// rehydration.
-  ///
-  /// Both [submitVoice]/[submitText] (called directly by the mic button /
-  /// text modal) and [handleActionFollowUp] (called by the real
-  /// `a2uiSendHandlerProvider` implementation for button-tap follow-ups, see
-  /// lib/app/wiring/gemini_send_handler.dart) funnel through [_run].
   ReportSubmissionControllerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'reportSubmissionControllerProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -71,17 +44,7 @@ final class ReportSubmissionControllerProvider
 }
 
 String _$reportSubmissionControllerHash() =>
-    r'5a2133262b0175210fcf09bee8cdf16cdcad962e';
-
-/// Orchestrates the end-to-end report-submission flow: GPS -> nearby
-/// historical conflicts -> Firebase AI (via [SubmitReport]) -> A2UI
-/// blueprint streamed into genui's transport -> cached for offline
-/// rehydration.
-///
-/// Both [submitVoice]/[submitText] (called directly by the mic button /
-/// text modal) and [handleActionFollowUp] (called by the real
-/// `a2uiSendHandlerProvider` implementation for button-tap follow-ups, see
-/// lib/app/wiring/gemini_send_handler.dart) funnel through [_run].
+    r'bd933850d751797dd1846a9ae60edc2e7177eb63';
 
 abstract class _$ReportSubmissionController
     extends $Notifier<ReportSubmissionState> {

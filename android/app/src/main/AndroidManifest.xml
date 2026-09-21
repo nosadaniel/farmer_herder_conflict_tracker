@@ -1,4 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Location: geolocator, for the risk-context GPS fix (task.md
+         non-negotiable #1). Without these, geolocator silently reports
+         AppLocationUnknown and the app falls back to the Middle Belt
+         centroid — no crash, but never a real fix on a real device either. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Microphone: record, for voice reporting (task.md non-negotiable #2). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Explicit even though a dependency's own manifest likely already
+         merges this in (Firebase AI calls and OSM map tiles both already
+         work without it declared here) — don't rely on that implicitly. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="farmer_herder_conflict_tracker"
         android:name="${applicationName}"

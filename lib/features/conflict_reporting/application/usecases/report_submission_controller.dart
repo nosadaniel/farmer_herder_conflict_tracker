@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';
+import 'package:logger/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -48,7 +49,9 @@ class ReportFailed extends ReportSubmissionState {
 /// text modal) and [handleActionFollowUp] (called by the real
 /// `a2uiSendHandlerProvider` implementation for button-tap follow-ups, see
 /// lib/app/wiring/gemini_send_handler.dart) funnel through [_run].
-@riverpod
+final _log = Logger();
+
+@Riverpod(keepAlive: true)
 class ReportSubmissionController extends _$ReportSubmissionController {
   GeminiRemoteDataSource? _gemini;
 
@@ -78,6 +81,11 @@ class ReportSubmissionController extends _$ReportSubmissionController {
     Map<String, dynamic>? actionContext,
   }) async {
     state = const ReportProcessing();
+    _log.i(
+      'ReportSubmissionController._run start '
+      '(audio=${audioBytes != null}, text=${reportText != null}, '
+      'action=$actionEventName)',
+    );
     try {
       final location = await ref.read(currentLocationProvider.future);
       final (lat, lng) = switch (location) {
@@ -87,6 +95,7 @@ class ReportSubmissionController extends _$ReportSubmissionController {
         ),
         AppLocationUnknown() => (9.0, 8.5), // Middle Belt fallback centroid
       };
+      _log.i('Resolved location: $location -> ($lat, $lng)');
 
       final params = SubmitReportParams(
         lat: lat,
@@ -102,10 +111,13 @@ class ReportSubmissionController extends _$ReportSubmissionController {
       final transport = ref.read(a2uiTransportProvider);
       final buffer = StringBuffer();
 
+      _log.i('Calling Gemini...');
       await for (final chunk in submit(params)) {
+        _log.d('Gemini chunk (${chunk.length} chars): $chunk');
         buffer.write(chunk);
         transport.addChunk(chunk);
       }
+      _log.i('Gemini stream complete, ${buffer.length} total chars');
 
       final fullBlueprint = buffer.toString();
       if (fullBlueprint.trim().isNotEmpty) {
@@ -130,16 +142,19 @@ class ReportSubmissionController extends _$ReportSubmissionController {
       }
 
       state = const ReportIdle();
-    } catch (e) {
+    } catch (e, st) {
       // Live call failed (offline, timeout, Firebase AI error, etc.) — fall
       // back to whatever was last cached (task.md non-negotiable #6).
+      _log.e('Live submission failed, attempting cache fallback', error: e, stackTrace: st);
       try {
         await rehydrateFromCache(
           ref.read(a2uiSurfaceControllerProvider),
           ref.read(cacheRepositoryProvider),
         );
         state = const ReportIdle(); // recovered via cache, not an error state
-      } catch (_) {
+        _log.i('Recovered via cached blueprint');
+      } catch (cacheError) {
+        _log.e('No cache to fall back to either', error: cacheError);
         state = ReportFailed(e.toString()); // nothing cached either
       }
     }

@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genui/genui.dart';
 
 import '../../../../../core/widgets/app_skeleton.dart';
+import '../../../application/usecases/report_submission_controller.dart';
 import '../providers/a2ui_providers.dart';
 
 /// Drop-in widget for the app shell's "dynamic canvas" slot.
@@ -46,6 +47,14 @@ class A2uiSurfaceView extends ConsumerWidget {
     final conversation = ref.watch(conversationProvider);
     final controller = ref.watch(a2uiSurfaceControllerProvider);
     final error = ref.watch(conversationErrorProvider).value;
+    // ReportSubmissionController drives voice/text submissions directly
+    // (bypassing Conversation.sendRequest, so genui's own isWaiting never
+    // toggles for that path — only button-tap follow-ups go through
+    // Conversation). Treat ReportProcessing the same as isWaiting so the
+    // skeleton/spinner actually show for the primary report flow, not just
+    // follow-ups.
+    final isSubmitting =
+        ref.watch(reportSubmissionControllerProvider) is ReportProcessing;
 
     if (error != null) {
       return _InlineError(error: error);
@@ -54,15 +63,16 @@ class A2uiSurfaceView extends ConsumerWidget {
     return ValueListenableBuilder<ConversationState>(
       valueListenable: conversation.state,
       builder: (context, state, _) {
+        final bool isWaiting = state.isWaiting || isSubmitting;
         final String? surfaceId = state.surfaces.isEmpty
             ? null
             : state.surfaces.last;
 
         if (surfaceId == null) {
-          if (state.isWaiting) {
+          if (isWaiting) {
             return const _A2uiSkeletonLoader();
           }
-          return const SizedBox.shrink();
+          return const _A2uiIdlePrompt();
         }
 
         final Widget surface = Surface(
@@ -70,7 +80,7 @@ class A2uiSurfaceView extends ConsumerWidget {
           surfaceContext: controller.contextFor(surfaceId),
         );
 
-        if (!state.isWaiting) return surface;
+        if (!isWaiting) return surface;
 
         return Stack(
           children: [
@@ -137,6 +147,40 @@ class _A2uiSkeletonLoader extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: null,
                 child: const Text('Secondary action'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown before the user's first report of the session — replaces what was
+/// previously a blank `SizedBox.shrink()`, which left an empty gap between
+/// the map and the footer with no indication of what to do next.
+class _A2uiIdlePrompt extends StatelessWidget {
+  const _A2uiIdlePrompt();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.record_voice_over_outlined,
+              size: 32,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Press and hold the mic, or type, to report what you see.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
