@@ -49,17 +49,23 @@ jobs:
       # here) was deleted/renamed upstream (confirmed 404 on
       # github.com/wu-vincent/firebase-app-distribution-github-action as of
       # 2026-09-21), which failed this job with "Unable to resolve action
-      # ... repository not found" before a single build step even ran. The
-      # official `firebase-tools` CLI's appdistribution:distribute command
-      # has no such dependency risk. Credentials go to $RUNNER_TEMP (cleaned
-      # up by the runner after the job, never committed).
+      # ... repository not found" before a single build step even ran.
+      #
+      # Auth via --token (FIREBASE_TOKEN), not GOOGLE_APPLICATION_CREDENTIALS
+      # — firebase-tools v15.x's appdistribution:distribute specifically has
+      # an open, currently-active bug where it doesn't reliably pick up ADC
+      # from a service account key (confirmed via multiple open
+      # firebase/firebase-tools GitHub issues as of 2026-09-22: "Failed to
+      # authenticate, have you run firebase login?" despite a valid
+      # GOOGLE_APPLICATION_CREDENTIALS). --token is deprecated upstream but
+      # is the confirmed-working path for this specific command today.
+      # FIREBASE_TOKEN is generated once, locally, via `firebase login:ci`
+      # (task.md's original secrets list already anticipated this as the
+      # alternative to FIREBASE_SERVICE_ACCOUNT_JSON).
       - name: Upload to Firebase App Distribution
-        env:
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
           npx firebase-tools@latest appdistribution:distribute \
             build/app/outputs/flutter-apk/app-release.apk \
             --app "${{ secrets.FIREBASE_APP_ID }}" \
-            --groups testers
+            --groups testers \
+            --token "${{ secrets.FIREBASE_TOKEN }}"
