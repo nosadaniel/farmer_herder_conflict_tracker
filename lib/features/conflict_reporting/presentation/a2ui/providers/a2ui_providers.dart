@@ -20,6 +20,7 @@
 //   action name (contract §7). No interception is implemented here — this
 //   file only guarantees the conversation/events are cleanly exposed for
 //   that to be wired in later.
+import 'package:farmer_herder_conflict_tracker/core/genui/map_view_catalog_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genui/genui.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -29,9 +30,14 @@ part 'a2ui_providers.g.dart';
 /// The catalog used to render AI-generated surfaces.
 ///
 /// Per docs/a2ui_gemini_contract.md §2: MVP renders every risk state with
-/// only the basic (no-asset) catalog — no custom `CatalogItem`s.
+/// the basic (no-asset) catalog plus one required custom `CatalogItem`,
+/// `MapView` (see §2's superseded-note) — Gemini can place a live conflict
+/// map inside its own generated surface.
 @Riverpod(keepAlive: true)
-Catalog a2uiCatalog(Ref ref) => BasicCatalogItems.asNoAssetCatalog();
+Catalog a2uiCatalog(Ref ref) =>
+    BasicCatalogItems.asNoAssetCatalog().copyWith(
+      newItems: [mapViewCatalogItem],
+    );
 
 /// The seam through which the real Gemini call is plugged in.
 ///

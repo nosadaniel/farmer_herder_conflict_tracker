@@ -54,6 +54,10 @@ Build one screen (via createSurface + updateComponents) with, top to bottom:
    itself (see RESERVED EVENT NAMES) instead of sending it back to you, so
    always give it a "context" containing a short "summary" string (one
    sentence, suitable for sharing to WhatsApp/SMS) and the "riskLevel".
+5. Optionally, a "MapView" component when the report is spatially relevant
+   (place it near the top, above or below the headline) — you don't supply
+   coordinates or markers, the app fills those in itself. Omit it if the
+   screen doesn't benefit from a map (e.g. a brief safety-tips follow-up).
 
 TONE (match phase_2_ux_design.md's messaging examples):
 - LOW: calm, reassuring. E.g. "No immediate threats. Stay vigilant."
