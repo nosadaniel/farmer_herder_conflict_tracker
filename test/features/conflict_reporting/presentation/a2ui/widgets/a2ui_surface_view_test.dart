@@ -79,18 +79,18 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(
-            home: Scaffold(body: A2uiSurfaceView()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: A2uiSurfaceView())),
         ),
       );
 
-      await container.read(conversationProvider).sendRequest(
-        ChatMessage.user(
-          'A large herd just crossed the northern stream heading south '
-          'toward the village farms.',
-        ),
-      );
+      await container
+          .read(conversationProvider)
+          .sendRequest(
+            ChatMessage.user(
+              'A large herd just crossed the northern stream heading south '
+              'toward the village farms.',
+            ),
+          );
 
       // Let the chunk-parsing pipeline (async stream transformer) and the
       // resulting surface-creation/component-update events propagate, then
@@ -131,9 +131,9 @@ void main() {
         ),
       );
 
-      final sendFuture = container.read(conversationProvider).sendRequest(
-        ChatMessage.user('report'),
-      );
+      final sendFuture = container
+          .read(conversationProvider)
+          .sendRequest(ChatMessage.user('report'));
       await tester.pump();
 
       // The AppSkeleton-wrapped placeholder, not a bare spinner — see

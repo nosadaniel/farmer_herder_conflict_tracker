@@ -32,68 +32,62 @@ void main() {
     await db.close();
   });
 
-  test(
-    'submitStructured with overrideLat/overrideLng bypasses currentLocationProvider',
-    () async {
-      var locationProviderRead = false;
+  test('submitStructured with overrideLat/overrideLng bypasses currentLocationProvider', () async {
+    var locationProviderRead = false;
 
-      final container = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWith((ref) => db),
-          currentLocationProvider.overrideWith((ref) async {
-            locationProviderRead = true;
-            return const AppLocationKnown(latitude: 1.23, longitude: 4.56);
-          }),
-        ],
-      );
-      addTearDown(container.dispose);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWith((ref) => db),
+        currentLocationProvider.overrideWith((ref) async {
+          locationProviderRead = true;
+          return const AppLocationKnown(latitude: 1.23, longitude: 4.56);
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
 
-      await container
-          .read(reportSubmissionControllerProvider.notifier)
-          .submitStructured(
-            wizardAnswers: const {'whatsHappening': 'Herd sighted.'},
-            lat: 9.99,
-            lng: 8.88,
-          );
+    await container
+        .read(reportSubmissionControllerProvider.notifier)
+        .submitStructured(
+          wizardAnswers: const {'whatsHappening': 'Herd sighted.'},
+          lat: 9.99,
+          lng: 8.88,
+        );
 
-      expect(
-        locationProviderRead,
-        isFalse,
-        reason:
-            'currentLocationProvider must not be read when overrideLat/'
-            'overrideLng are both supplied',
-      );
-    },
-  );
+    expect(
+      locationProviderRead,
+      isFalse,
+      reason:
+          'currentLocationProvider must not be read when overrideLat/'
+          'overrideLng are both supplied',
+    );
+  });
 
-  test(
-    'submitVoice (no override) still resolves location via currentLocationProvider',
-    () async {
-      var locationProviderRead = false;
+  test('submitVoice (no override) still resolves location via currentLocationProvider', () async {
+    var locationProviderRead = false;
 
-      final container = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWith((ref) => db),
-          currentLocationProvider.overrideWith((ref) async {
-            locationProviderRead = true;
-            return const AppLocationKnown(latitude: 1.23, longitude: 4.56);
-          }),
-        ],
-      );
-      addTearDown(container.dispose);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWith((ref) => db),
+        currentLocationProvider.overrideWith((ref) async {
+          locationProviderRead = true;
+          return const AppLocationKnown(latitude: 1.23, longitude: 4.56);
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
 
-      await container
-          .read(reportSubmissionControllerProvider.notifier)
-          .submitText('A freeform text report.');
+    await container
+        .read(reportSubmissionControllerProvider.notifier)
+        .submitText('A freeform text report.');
 
-      expect(
-        locationProviderRead,
-        isTrue,
-        reason:
-            'submitText (no overrideLat/overrideLng) must still resolve '
-            'location via currentLocationProvider, unchanged from before '
-            'the wizard bridge was added',
-      );
-    },
-  );
+    expect(
+      locationProviderRead,
+      isTrue,
+      reason:
+          'submitText (no overrideLat/overrideLng) must still resolve '
+          'location via currentLocationProvider, unchanged from before '
+          'the wizard bridge was added',
+    );
+  });
 }

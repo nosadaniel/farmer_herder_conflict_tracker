@@ -55,9 +55,8 @@ void main() {
     'filters out records beyond radiusKm and sorts the rest nearest-first',
     () async {
       // Deliberately supplied out of distance order.
-      when(
-        () => repository.getAllConflicts(),
-      ).thenAnswer((_) async => [far, medium, near]);
+      when(() => repository.getAllConflicts())
+          .thenAnswer((_) async => [far, medium, near]);
 
       final result = await usecase(
         lat: _queryLat,
@@ -71,9 +70,8 @@ void main() {
   );
 
   test('respects the limit parameter after sorting', () async {
-    when(
-      () => repository.getAllConflicts(),
-    ).thenAnswer((_) async => [medium, near, far]);
+    when(() => repository.getAllConflicts())
+        .thenAnswer((_) async => [medium, near, far]);
 
     final result = await usecase(
       lat: _queryLat,
@@ -100,9 +98,8 @@ void main() {
   });
 
   test('uses the default radiusKm (25) and limit (5) when omitted', () async {
-    when(
-      () => repository.getAllConflicts(),
-    ).thenAnswer((_) async => [near, medium, far]);
+    when(() => repository.getAllConflicts())
+        .thenAnswer((_) async => [near, medium, far]);
 
     final result = await usecase(lat: _queryLat, lng: _queryLng);
 

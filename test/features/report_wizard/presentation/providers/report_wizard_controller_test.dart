@@ -51,9 +51,7 @@ class FakeWizardSession implements WizardSession {
   }
 
   Future<void> _onSend(ChatMessage message) async {
-    final match = RegExp(
-      r'Use this surfaceId: (\S+)',
-    ).firstMatch(message.text);
+    final match = RegExp(r'Use this surfaceId: (\S+)').firstMatch(message.text);
     final surfaceId = match?.group(1) ?? 'unknown_surface';
     transport.addChunk(_fixtureFor(surfaceId));
   }
@@ -99,9 +97,7 @@ void main() {
     fakeSession = FakeWizardSession(reportWizardCatalog);
     container = ProviderContainer(
       overrides: [
-        reportWizardSessionFactoryProvider.overrideWithValue(
-          () => fakeSession,
-        ),
+        reportWizardSessionFactoryProvider.overrideWithValue(() => fakeSession),
       ],
     );
   });
@@ -117,10 +113,9 @@ void main() {
       await notifier.initialize();
 
       expect(fakeSession.sendTextCallCount, 1);
-      expect(
-        container.read(reportWizardControllerProvider).stepGenerated,
-        {ReportWizardStep.where},
-      );
+      expect(container.read(reportWizardControllerProvider).stepGenerated, {
+        ReportWizardStep.where,
+      });
     },
   );
 
@@ -163,28 +158,8 @@ void main() {
     expect(fakeSession.sendTextCallCount, 2); // unchanged — pure local move
   });
 
-  test('revisiting an already-generated step via next() does not regenerate', () async {
-    final notifier = container.read(reportWizardControllerProvider.notifier);
-    await notifier.initialize();
-    fakeSession.host
-        .contextFor(ReportWizardStep.where.surfaceId)
-        .dataModel
-        .update(DataPath('/report/location'), ['Kaduna State']);
-    await notifier.next(); // -> whatsHappening (2 calls total)
-    expect(fakeSession.sendTextCallCount, 2);
-
-    notifier.back(); // -> where, free
-    await notifier.next(); // -> whatsHappening again, already generated
-    expect(fakeSession.sendTextCallCount, 2); // still 2, no new call
-    expect(
-      container.read(reportWizardControllerProvider).step,
-      ReportWizardStep.whatsHappening,
-    );
-  });
-
   test(
-    'answers mirrors simulated ChoicePicker DataModel writes, unwrapping '
-    "genui's one-element-list convention",
+    'revisiting an already-generated step via next() does not regenerate',
     () async {
       final notifier = container.read(reportWizardControllerProvider.notifier);
       await notifier.initialize();
@@ -192,35 +167,58 @@ void main() {
           .contextFor(ReportWizardStep.where.surfaceId)
           .dataModel
           .update(DataPath('/report/location'), ['Kaduna State']);
-      await notifier.next();
+      await notifier.next(); // -> whatsHappening (2 calls total)
+      expect(fakeSession.sendTextCallCount, 2);
 
-      fakeSession.host
-          .contextFor(ReportWizardStep.whatsHappening.surfaceId)
-          .dataModel
-          .update(DataPath('/report/whatsHappening'), ['Herd sighting']);
-
-      final answers = container.read(reportWizardControllerProvider).answers;
-      expect(answers['location'], 'Kaduna State');
-      expect(answers['whatsHappening'], 'Herd sighting');
+      notifier.back(); // -> where, free
+      await notifier.next(); // -> whatsHappening again, already generated
+      expect(fakeSession.sendTextCallCount, 2); // still 2, no new call
+      expect(
+        container.read(reportWizardControllerProvider).step,
+        ReportWizardStep.whatsHappening,
+      );
     },
   );
 
-  test('next() requires an answer before advancing past a choice step', () async {
+  test('answers mirrors simulated ChoicePicker DataModel writes, unwrapping '
+      "genui's one-element-list convention", () async {
     final notifier = container.read(reportWizardControllerProvider.notifier);
     await notifier.initialize();
+    fakeSession.host
+        .contextFor(ReportWizardStep.where.surfaceId)
+        .dataModel
+        .update(DataPath('/report/location'), ['Kaduna State']);
+    await notifier.next();
 
-    await notifier.next(); // no answer set on Step 1 yet
+    fakeSession.host
+        .contextFor(ReportWizardStep.whatsHappening.surfaceId)
+        .dataModel
+        .update(DataPath('/report/whatsHappening'), ['Herd sighting']);
 
-    expect(
-      container.read(reportWizardControllerProvider).step,
-      ReportWizardStep.where, // still on Step 1
-    );
-    expect(
-      container.read(reportWizardControllerProvider).validationMessage,
-      isNotNull,
-    );
-    expect(fakeSession.sendTextCallCount, 1); // no extra generation attempt
+    final answers = container.read(reportWizardControllerProvider).answers;
+    expect(answers['location'], 'Kaduna State');
+    expect(answers['whatsHappening'], 'Herd sighting');
   });
+
+  test(
+    'next() requires an answer before advancing past a choice step',
+    () async {
+      final notifier = container.read(reportWizardControllerProvider.notifier);
+      await notifier.initialize();
+
+      await notifier.next(); // no answer set on Step 1 yet
+
+      expect(
+        container.read(reportWizardControllerProvider).step,
+        ReportWizardStep.where, // still on Step 1
+      );
+      expect(
+        container.read(reportWizardControllerProvider).validationMessage,
+        isNotNull,
+      );
+      expect(fakeSession.sendTextCallCount, 1); // no extra generation attempt
+    },
+  );
 
   test('skip() advances without requiring an answer', () async {
     final notifier = container.read(reportWizardControllerProvider.notifier);

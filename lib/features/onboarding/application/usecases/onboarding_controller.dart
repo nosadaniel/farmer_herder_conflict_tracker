@@ -24,9 +24,10 @@ class OnboardingController extends _$OnboardingController {
   Future<bool> build() async {
     final db = ref.watch(appDatabaseProvider);
     try {
-      final row = await (db.select(
-        db.cache,
-      )..where((t) => t.key.equals(onboardingCompleteCacheKey))).getSingleOrNull();
+      final row =
+          await (db.select(db.cache)
+                ..where((t) => t.key.equals(onboardingCompleteCacheKey)))
+              .getSingleOrNull();
       return row != null;
     } catch (_) {
       return false;

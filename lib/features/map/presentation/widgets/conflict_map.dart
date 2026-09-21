@@ -44,10 +44,9 @@ class ConflictMap extends ConsumerWidget {
     final conflictsAsync = ref.watch(allConflictDataProvider);
 
     final userLatLng = locationAsync.maybeWhen(
-      data: (location) =>
-          location is AppLocationKnown
-              ? LatLng(location.latitude, location.longitude)
-              : null,
+      data: (location) => location is AppLocationKnown
+          ? LatLng(location.latitude, location.longitude)
+          : null,
       orElse: () => null,
     );
 
@@ -85,9 +84,7 @@ class ConflictMap extends ConsumerWidget {
           shape: BoxShape.circle,
           color: Colors.blue,
           border: Border.all(color: Colors.white, width: 2),
-          boxShadow: const [
-            BoxShadow(color: Colors.black26, blurRadius: 4),
-          ],
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
         ),
         child: const Icon(Icons.person_pin, color: Colors.white, size: 18),
       ),

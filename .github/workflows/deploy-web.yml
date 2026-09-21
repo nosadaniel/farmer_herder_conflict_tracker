@@ -1,8 +1,17 @@
 name: Deploy Web (GitHub Pages)
 
-# Manual only, and only meaningful if the web build survives the cut list
-# in task.md — Android APK is the required artifact, web is a stretch goal.
+# Only meaningful if the web build survives the cut list in task.md —
+# Android APK is the required artifact, web is a stretch goal.
+#
+# Per task.md's "Planned CI/CD redesign" (now implemented): auto-deploys on
+# every push to main, gated by a GitHub Environment. Until `web-production`
+# has required reviewers configured (Settings -> Environments — see task.md
+# "Your responsibilities"), this environment has no protection rules, so the
+# job just runs immediately, same as before. workflow_dispatch is kept as a
+# manual fallback.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -13,6 +22,7 @@ jobs:
   deploy:
     needs: gate
     runs-on: ubuntu-latest
+    environment: web-production
     permissions:
       contents: write
     steps:

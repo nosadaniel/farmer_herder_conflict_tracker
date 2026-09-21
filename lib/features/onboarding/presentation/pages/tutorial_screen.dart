@@ -17,10 +17,7 @@ class TutorialScreen extends StatefulWidget {
 
 class _TutorialScreenState extends State<TutorialScreen> {
   static const _steps = [
-    TutorialStep(
-      icon: Icons.mic,
-      text: 'Speak your report — no typing needed',
-    ),
+    TutorialStep(icon: Icons.mic, text: 'Speak your report — no typing needed'),
     TutorialStep(
       icon: Icons.map,
       text: 'See real hotspots near you on the map',

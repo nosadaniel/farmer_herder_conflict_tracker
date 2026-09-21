@@ -81,43 +81,38 @@ void main() {
   });
 
   for (final variant in const [null, 'compact', 'full']) {
-    testWidgets(
-      'renders a MapView surface without throwing '
-      '(variant: ${variant ?? 'missing'})',
-      (tester) async {
-        final surfaceId = 'map_test_${variant ?? 'missing'}';
-        final container = _containerWithFixtureHandler(
-          _mapViewFixture(surfaceId: surfaceId, variant: variant),
-        );
-        addTearDown(container.dispose);
+    testWidgets('renders a MapView surface without throwing '
+        '(variant: ${variant ?? 'missing'})', (tester) async {
+      final surfaceId = 'map_test_${variant ?? 'missing'}';
+      final container = _containerWithFixtureHandler(
+        _mapViewFixture(surfaceId: surfaceId, variant: variant),
+      );
+      addTearDown(container.dispose);
 
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: const MaterialApp(
-              home: Scaffold(body: A2uiSurfaceView()),
-            ),
-          ),
-        );
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: Scaffold(body: A2uiSurfaceView())),
+        ),
+      );
 
-        await container.read(conversationProvider).sendRequest(
-          ChatMessage.user('test report'),
-        );
+      await container
+          .read(conversationProvider)
+          .sendRequest(ChatMessage.user('test report'));
 
-        await tester.pump();
-        await tester.pump();
+      await tester.pump();
+      await tester.pump();
 
-        // A SizedBox with the expected height (per variant) should now be
-        // in the tree, proving MapView's widgetBuilder ran without
-        // throwing and honored the variant -> height mapping.
-        final expectedHeight = variant == 'compact'
-            ? mapViewCompactHeight
-            : mapViewFullHeight;
-        final sizedBoxes = tester
-            .widgetList<SizedBox>(find.byType(SizedBox))
-            .where((box) => box.height == expectedHeight);
-        expect(sizedBoxes, isNotEmpty);
-      },
-    );
+      // A SizedBox with the expected height (per variant) should now be
+      // in the tree, proving MapView's widgetBuilder ran without
+      // throwing and honored the variant -> height mapping.
+      final expectedHeight = variant == 'compact'
+          ? mapViewCompactHeight
+          : mapViewFullHeight;
+      final sizedBoxes = tester
+          .widgetList<SizedBox>(find.byType(SizedBox))
+          .where((box) => box.height == expectedHeight);
+      expect(sizedBoxes, isNotEmpty);
+    });
   }
 }

@@ -12,24 +12,21 @@ import 'package:flutter_test/flutter_test.dart';
 /// bindings — [parseConflictDataset] is pure JSON parsing with no Flutter
 /// dependency.
 void main() {
-  test(
-    'parses the bundled farmer_herder_conflict.json into metadata.total_records rows',
-    () async {
-      final file = File('assets/data/farmer_herder_conflict.json');
-      expect(
-        file.existsSync(),
-        isTrue,
-        reason: 'Bundled dataset asset not found at ${file.path}',
-      );
+  test('parses the bundled farmer_herder_conflict.json into metadata.total_records rows', () async {
+    final file = File('assets/data/farmer_herder_conflict.json');
+    expect(
+      file.existsSync(),
+      isTrue,
+      reason: 'Bundled dataset asset not found at ${file.path}',
+    );
 
-      final jsonString = await file.readAsString();
+    final jsonString = await file.readAsString();
 
-      final result = parseConflictDataset(jsonString);
+    final result = parseConflictDataset(jsonString);
 
-      expect(result.totalRecordsMetadata, greaterThan(0));
-      expect(result.records.length, result.totalRecordsMetadata);
-    },
-  );
+    expect(result.totalRecordsMetadata, greaterThan(0));
+    expect(result.records.length, result.totalRecordsMetadata);
+  });
 
   test('every parsed record has valid coordinates and a severity label', () {
     final file = File('assets/data/farmer_herder_conflict.json');

@@ -1,10 +1,16 @@
 name: Build & Test (reusable)
 
-# Single source of truth for "does this build pass": analyze, test, build a
-# debug APK. Called by ci.yml on every push, and by both deploy workflows as
-# a gate before they ship anything — so nothing deploys without passing the
-# exact same checks as a normal commit. Do not duplicate these steps
-# elsewhere; add new checks here once and every caller gets them for free.
+# Single source of truth for "does this pass": analyze, format-check, test.
+# Called by ci.yml on every push, and by both deploy workflows as a gate
+# before they ship anything — so nothing deploys without passing the exact
+# same checks as a normal commit. Do not duplicate these steps elsewhere;
+# add new checks here once and every caller gets them for free.
+#
+# Per task.md's "Planned CI/CD redesign" (now implemented): this no longer
+# builds a debug APK — that was redundant with the real release build each
+# deploy job already does right after this gate passes. Dropping it here
+# gives every push a faster analyze/format/test-only signal; the actual
+# "does it build" question gets answered for real, once, at deploy time.
 on:
   workflow_call:
     secrets:
@@ -37,6 +43,6 @@ jobs:
 
       - run: flutter analyze
 
-      - run: flutter test
+      - run: dart format --output=none --set-exit-if-changed .
 
-      - run: flutter build apk --debug
+      - run: flutter test

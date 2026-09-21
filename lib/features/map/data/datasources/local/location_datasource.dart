@@ -32,9 +32,7 @@ class LocationDataSource {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      throw const LocationException(
-        'Location permission permanently denied',
-      );
+      throw const LocationException('Location permission permanently denied');
     }
 
     try {

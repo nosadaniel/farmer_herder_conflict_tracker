@@ -34,10 +34,9 @@ part 'a2ui_providers.g.dart';
 /// `MapView` (see §2's superseded-note) — Gemini can place a live conflict
 /// map inside its own generated surface.
 @Riverpod(keepAlive: true)
-Catalog a2uiCatalog(Ref ref) =>
-    BasicCatalogItems.asNoAssetCatalog().copyWith(
-      newItems: [mapViewCatalogItem],
-    );
+Catalog a2uiCatalog(Ref ref) => BasicCatalogItems.asNoAssetCatalog().copyWith(
+  newItems: [mapViewCatalogItem],
+);
 
 /// The seam through which the real Gemini call is plugged in.
 ///

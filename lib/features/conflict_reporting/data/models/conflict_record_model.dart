@@ -69,7 +69,8 @@ class ConflictRecordModel {
     final dateString =
         (json['date_start'] as String?) ?? (json['date_end'] as String?);
     final date = dateString != null
-        ? (DateTime.tryParse(dateString) ?? DateTime.fromMillisecondsSinceEpoch(0))
+        ? (DateTime.tryParse(dateString) ??
+              DateTime.fromMillisecondsSinceEpoch(0))
         : DateTime.fromMillisecondsSinceEpoch(0);
 
     return ConflictRecordModel(

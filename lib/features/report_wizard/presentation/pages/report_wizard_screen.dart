@@ -19,8 +19,7 @@ class ReportWizardScreen extends ConsumerStatefulWidget {
   const ReportWizardScreen({super.key});
 
   @override
-  ConsumerState<ReportWizardScreen> createState() =>
-      _ReportWizardScreenState();
+  ConsumerState<ReportWizardScreen> createState() => _ReportWizardScreenState();
 }
 
 class _ReportWizardScreenState extends ConsumerState<ReportWizardScreen> {
@@ -119,7 +118,10 @@ class _WizardStepMode extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   for (final s in ReportWizardStep.values)
-                    _WizardStepDot(active: s == step, done: s.index < step.index),
+                    _WizardStepDot(
+                      active: s == step,
+                      done: s.index < step.index,
+                    ),
                 ],
               ),
             ),
@@ -189,9 +191,9 @@ class _WizardStepMode extends ConsumerWidget {
               radius: 28,
               onRecordingComplete: (bytes) =>
                   controller.submitSpokenDetail(bytes),
-              onError: (message) => ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(message))),
+              onError: (message) =>
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(message))),
             ),
           ),
         ),
@@ -300,13 +302,18 @@ class _WizardStepDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color = active || done ? AppColors.secondary : AppColors.neutral;
+    final Color color = active || done
+        ? AppColors.secondary
+        : AppColors.neutral;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.symmetric(horizontal: 4),
       width: active ? 24 : 8,
       height: 8,
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(4),
+      ),
     );
   }
 }
@@ -328,7 +335,10 @@ class _WizardStepSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Loading options', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Loading options',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 16),
             for (var i = 0; i < 4; i++)
               const Padding(

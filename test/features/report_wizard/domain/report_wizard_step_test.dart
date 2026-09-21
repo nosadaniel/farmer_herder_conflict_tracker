@@ -5,7 +5,10 @@ void main() {
   group('ReportWizardStep.surfaceId', () {
     test('is "wizard_<code>" for every step', () {
       expect(ReportWizardStep.where.surfaceId, 'wizard_where');
-      expect(ReportWizardStep.whatsHappening.surfaceId, 'wizard_whats_happening');
+      expect(
+        ReportWizardStep.whatsHappening.surfaceId,
+        'wizard_whats_happening',
+      );
       expect(ReportWizardStep.whoInvolved.surfaceId, 'wizard_who_involved');
       expect(ReportWizardStep.addDetail.surfaceId, 'wizard_add_detail');
     });
@@ -17,21 +20,39 @@ void main() {
   });
 
   group('ReportWizardStep.next', () {
-    test('walks where -> whatsHappening -> whoInvolved -> addDetail -> null', () {
-      expect(ReportWizardStep.where.next, ReportWizardStep.whatsHappening);
-      expect(ReportWizardStep.whatsHappening.next, ReportWizardStep.whoInvolved);
-      expect(ReportWizardStep.whoInvolved.next, ReportWizardStep.addDetail);
-      expect(ReportWizardStep.addDetail.next, isNull);
-    });
+    test(
+      'walks where -> whatsHappening -> whoInvolved -> addDetail -> null',
+      () {
+        expect(ReportWizardStep.where.next, ReportWizardStep.whatsHappening);
+        expect(
+          ReportWizardStep.whatsHappening.next,
+          ReportWizardStep.whoInvolved,
+        );
+        expect(ReportWizardStep.whoInvolved.next, ReportWizardStep.addDetail);
+        expect(ReportWizardStep.addDetail.next, isNull);
+      },
+    );
   });
 
   group('ReportWizardStep.previous', () {
-    test('walks addDetail -> whoInvolved -> whatsHappening -> where -> null', () {
-      expect(ReportWizardStep.addDetail.previous, ReportWizardStep.whoInvolved);
-      expect(ReportWizardStep.whoInvolved.previous, ReportWizardStep.whatsHappening);
-      expect(ReportWizardStep.whatsHappening.previous, ReportWizardStep.where);
-      expect(ReportWizardStep.where.previous, isNull);
-    });
+    test(
+      'walks addDetail -> whoInvolved -> whatsHappening -> where -> null',
+      () {
+        expect(
+          ReportWizardStep.addDetail.previous,
+          ReportWizardStep.whoInvolved,
+        );
+        expect(
+          ReportWizardStep.whoInvolved.previous,
+          ReportWizardStep.whatsHappening,
+        );
+        expect(
+          ReportWizardStep.whatsHappening.previous,
+          ReportWizardStep.where,
+        );
+        expect(ReportWizardStep.where.previous, isNull);
+      },
+    );
 
     test('next/previous are inverses of each other across the whole chain', () {
       for (final step in ReportWizardStep.values) {

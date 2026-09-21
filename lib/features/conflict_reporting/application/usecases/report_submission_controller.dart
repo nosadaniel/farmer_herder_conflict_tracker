@@ -181,7 +181,11 @@ class ReportSubmissionController extends _$ReportSubmissionController {
     } catch (e, st) {
       // Live call failed (offline, timeout, Firebase AI error, etc.) — fall
       // back to whatever was last cached (task.md non-negotiable #6).
-      _log.e('Live submission failed, attempting cache fallback', error: e, stackTrace: st);
+      _log.e(
+        'Live submission failed, attempting cache fallback',
+        error: e,
+        stackTrace: st,
+      );
       try {
         final rehydrated = await rehydrateFromCache(
           ref.read(a2uiSurfaceControllerProvider),

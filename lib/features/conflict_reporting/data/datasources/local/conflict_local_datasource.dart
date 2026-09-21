@@ -36,11 +36,7 @@ class ConflictLocalDataSource {
   Future<void> insertAll(List<ConflictDataCompanion> rows) async {
     if (rows.isEmpty) return;
     await _db.batch((batch) {
-      batch.insertAll(
-        _db.conflictData,
-        rows,
-        mode: InsertMode.insertOrReplace,
-      );
+      batch.insertAll(_db.conflictData, rows, mode: InsertMode.insertOrReplace);
     });
   }
 

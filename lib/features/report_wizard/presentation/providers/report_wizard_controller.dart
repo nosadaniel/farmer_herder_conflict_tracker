@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genui/genui.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:logger/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/permissions/permission_requesters.dart';
@@ -36,6 +37,13 @@ const Map<String, (double, double)> reportWizardStateCentroids = {
 /// Middle Belt centroid used when location can't be resolved any other way
 /// — mirrors `ReportSubmissionController._run`'s existing fallback.
 const (double, double) _middleBeltFallback = (9.0, 8.5);
+
+/// Mirrors `report_submission_controller.dart`'s `_log` convention (a
+/// module-level `Logger()`, not a field) — this is the newest, least
+/// on-device-tested part of the app (a second GenUI session, its own
+/// Gemini calls per step, permission flows), so logging here matters for
+/// diagnosing exactly where a live run goes wrong.
+final _log = Logger();
 
 /// Exact option strings `ReportWizardStep.where.rules` asks Gemini to offer.
 /// A selection matching either of these is an app-owned intent, not a
@@ -199,6 +207,7 @@ class ReportWizardController extends _$ReportWizardController {
   Future<void> _advance() async {
     final ReportWizardStep? nextStep = state.step.next;
     if (nextStep == null) return; // addDetail: Create, not another step.
+    _log.i('Wizard advancing ${state.step.code} -> ${nextStep.code}');
     if (!state.stepGenerated.contains(nextStep)) {
       await _generateStep(nextStep);
     }
@@ -210,12 +219,14 @@ class ReportWizardController extends _$ReportWizardController {
   void back() {
     final ReportWizardStep? previous = state.step.previous;
     if (previous == null) return;
+    _log.i('Wizard back ${state.step.code} -> ${previous.code} (no Gemini call)');
     state = state.copyWith(step: previous, clearValidationMessage: true);
   }
 
   /// Disposes the current session and starts a brand-new wizard run —
   /// triggered by the Result screen's "X" (close/restart) button.
   Future<void> restart() async {
+    _log.i('Wizard restart: disposing session, resetting to ${ReportWizardStep.where.code}');
     _session?.dispose();
     _session = null;
     for (final unsubscribers in _unsubscribeByStep.values) {
@@ -236,7 +247,11 @@ class ReportWizardController extends _$ReportWizardController {
   void resolveStateLocation(String stateName) {
     final coords = reportWizardStateCentroids[stateName];
     if (coords == null) return;
-    _applyLocation(lat: coords.$1, lng: coords.$2, placeName: '$stateName State');
+    _applyLocation(
+      lat: coords.$1,
+      lng: coords.$2,
+      placeName: '$stateName State',
+    );
     state = state.copyWith(showStatePicker: false);
   }
 
@@ -250,9 +265,11 @@ class ReportWizardController extends _$ReportWizardController {
   /// transcript into `/report/detailText`, same local-write path a catalog
   /// widget would use.
   Future<void> submitSpokenDetail(Uint8List audioBytes) async {
+    _log.i('Transcribing Step 4 voice detail (${audioBytes.length} bytes)');
     try {
       final transcript = await GeminiRemoteDataSource.production()
           .transcribeAudio(audioBytes);
+      _log.i('Transcription succeeded (${transcript.length} chars)');
       _wizardSession.host
           .contextFor(ReportWizardStep.addDetail.surfaceId)
           .dataModel
@@ -260,7 +277,8 @@ class ReportWizardController extends _$ReportWizardController {
             DataPath(ReportWizardStep.addDetail.bindings.single.path),
             transcript,
           );
-    } catch (e) {
+    } catch (e, st) {
+      _log.e('Voice detail transcription failed', error: e, stackTrace: st);
       state = state.copyWith(error: 'Could not transcribe audio: $e');
     }
   }
@@ -279,6 +297,10 @@ class ReportWizardController extends _$ReportWizardController {
       }
     }
     final coords = _coords;
+    _log.i(
+      'Wizard createReport: answers=$wizardAnswers '
+      'location=$_placeName (${coords?.$1}, ${coords?.$2})',
+    );
     await ref
         .read(reportSubmissionControllerProvider.notifier)
         .submitStructured(
@@ -287,6 +309,7 @@ class ReportWizardController extends _$ReportWizardController {
           lng: coords?.$2,
           placeName: _placeName,
         );
+    _log.i('Wizard createReport: handed off to ReportSubmissionController');
     state = state.copyWith(showingResult: true);
   }
 
@@ -297,6 +320,7 @@ class ReportWizardController extends _$ReportWizardController {
 
   Future<void> _generateStep(ReportWizardStep step) async {
     if (state.stepGenerated.contains(step)) return;
+    _log.i('Generating wizard step "${step.surfaceId}"');
     state = state.copyWith(
       isGeneratingStep: true,
       clearValidationMessage: true,
@@ -311,11 +335,13 @@ class ReportWizardController extends _$ReportWizardController {
       await session.sendText(_promptFor(step));
       await surfaceReady;
       _attachSubscriptions(step, session);
+      _log.i('Wizard step "${step.surfaceId}" ready');
       state = state.copyWith(
         stepGenerated: {...state.stepGenerated, step},
         isGeneratingStep: false,
       );
-    } catch (e) {
+    } catch (e, st) {
+      _log.e('Wizard step "${step.surfaceId}" failed to generate', error: e, stackTrace: st);
       state = state.copyWith(
         isGeneratingStep: false,
         error: 'Could not load this step: $e',
@@ -343,7 +369,13 @@ class ReportWizardController extends _$ReportWizardController {
       }
     });
     return completer.future
-        .timeout(const Duration(seconds: 25), onTimeout: () {})
+        .timeout(
+          const Duration(seconds: 25),
+          onTimeout: () => _log.w(
+            'Timed out waiting for surface "$targetSurfaceId" '
+            '(25s) — Gemini may not have followed the wizard contract',
+          ),
+        )
         .whenComplete(subscription.cancel);
   }
 
@@ -438,7 +470,10 @@ class ReportWizardController extends _$ReportWizardController {
     _wizardSession.host
         .contextFor(ReportWizardStep.where.surfaceId)
         .dataModel
-        .update(DataPath(ReportWizardStep.where.bindings.single.path), placeName);
+        .update(
+          DataPath(ReportWizardStep.where.bindings.single.path),
+          placeName,
+        );
   }
 
   /// Combines the step's fixed rules with an explicit "use this surfaceId"

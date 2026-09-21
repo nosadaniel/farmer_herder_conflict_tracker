@@ -6,9 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('App boots and shows onboarding on first launch', (
-    tester,
-  ) async {
+  testWidgets('App boots and shows onboarding on first launch', (tester) async {
     // In-memory Drift instance (same pattern as the repository tests) so
     // this never touches a real device DB file, and Firebase.initializeApp()
     // is skipped since we pump ConflictTrackerApp directly rather than

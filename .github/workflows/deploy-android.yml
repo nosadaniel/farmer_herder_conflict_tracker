@@ -1,10 +1,16 @@
 name: Deploy Android (Firebase App Distribution)
 
-# Manual only — during Phase 1 the repo gets many WIP pushes from parallel
-# tracks; auto-deploying on every push would spam testers or fail on
-# incomplete branches. You trigger this deliberately (00:00 checkpoint, and
-# again before 18:00 if there's a later build).
+# Per task.md's "Planned CI/CD redesign" (now implemented): auto-deploys on
+# every push to main, gated by a GitHub Environment. Until `android-production`
+# has required reviewers configured (Settings -> Environments — see task.md
+# "Your responsibilities"), this environment has no protection rules, so the
+# job just runs immediately, same as before. Once reviewers are added, this
+# becomes a real reviewed-deployment gate without touching this file again.
+# workflow_dispatch is kept as a manual fallback (e.g. re-deploy an old
+# commit without a new push).
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -15,6 +21,7 @@ jobs:
   deploy:
     needs: gate
     runs-on: ubuntu-latest
+    environment: android-production
     steps:
       - uses: actions/checkout@v4
 

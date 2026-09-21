@@ -33,7 +33,9 @@ class MainScreen extends ConsumerWidget {
           onPressed: () => ReportWizardRoute.go(context),
           icon: const Icon(Icons.campaign_outlined),
           label: const Text('Report'),
-          style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size.fromHeight(56),
+          ),
         ),
       ),
     );
