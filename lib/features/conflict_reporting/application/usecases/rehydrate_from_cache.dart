@@ -18,9 +18,11 @@ import '../../data/repositories/cache_repository.dart';
 /// that wiring for free.
 ///
 /// Feeds the last cached blueprint (stored under [cacheKey], defaulting to
-/// [AppConstants.lastBlueprintCacheKey]) back into [controller]. No-op if
-/// there is nothing cached (or it expired).
-Future<void> rehydrateFromCache(
+/// [AppConstants.lastBlueprintCacheKey]) back into [controller]. Returns
+/// `false` (without touching [controller]) if there is nothing cached (or
+/// it expired) — callers must check this rather than assume a cache hit,
+/// since there being nothing to rehydrate is not itself an error.
+Future<bool> rehydrateFromCache(
   SurfaceController controller,
   CacheRepository cacheRepository, {
   String cacheKey = AppConstants.lastBlueprintCacheKey,
@@ -28,7 +30,7 @@ Future<void> rehydrateFromCache(
   final String? blueprintJson = await cacheRepository.getLastBlueprint(
     cacheKey,
   );
-  if (blueprintJson == null || blueprintJson.isEmpty) return;
+  if (blueprintJson == null || blueprintJson.isEmpty) return false;
 
   final adapter = A2uiTransportAdapter();
   final subscription = adapter.incomingMessages.listen(
@@ -41,6 +43,7 @@ Future<void> rehydrateFromCache(
     await subscription.cancel();
     adapter.dispose();
   }
+  return true;
 }
 
 /// Runs [attemptLive] (the real Gemini round-trip, owned by Track B); if it

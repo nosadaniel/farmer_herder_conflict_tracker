@@ -52,8 +52,9 @@ void main() {
   });
 
   test('rehydrateFromCache is a no-op when nothing is cached', () async {
-    await rehydrateFromCache(controller, cacheRepository);
+    final rehydrated = await rehydrateFromCache(controller, cacheRepository);
 
+    expect(rehydrated, isFalse);
     expect(controller.activeSurfaceIds, isEmpty);
   });
 
@@ -66,12 +67,13 @@ void main() {
         const Duration(minutes: 5),
       );
 
-      await rehydrateFromCache(
+      final rehydrated = await rehydrateFromCache(
         controller,
         cacheRepository,
         cacheKey: 'last_blueprint',
       );
 
+      expect(rehydrated, isTrue);
       expect(controller.activeSurfaceIds, contains('report_1758389421000'));
     },
   );

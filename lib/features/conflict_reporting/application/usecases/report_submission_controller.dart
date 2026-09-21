@@ -147,15 +147,20 @@ class ReportSubmissionController extends _$ReportSubmissionController {
       // back to whatever was last cached (task.md non-negotiable #6).
       _log.e('Live submission failed, attempting cache fallback', error: e, stackTrace: st);
       try {
-        await rehydrateFromCache(
+        final rehydrated = await rehydrateFromCache(
           ref.read(a2uiSurfaceControllerProvider),
           ref.read(cacheRepositoryProvider),
         );
-        state = const ReportIdle(); // recovered via cache, not an error state
-        _log.i('Recovered via cached blueprint');
+        if (rehydrated) {
+          state = const ReportIdle(); // recovered via cache, not an error
+          _log.i('Recovered via cached blueprint');
+        } else {
+          _log.e('No cache to fall back to either');
+          state = ReportFailed(e.toString());
+        }
       } catch (cacheError) {
-        _log.e('No cache to fall back to either', error: cacheError);
-        state = ReportFailed(e.toString()); // nothing cached either
+        _log.e('Cache fallback itself failed', error: cacheError);
+        state = ReportFailed(e.toString());
       }
     }
   }
