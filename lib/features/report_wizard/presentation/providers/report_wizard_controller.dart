@@ -366,30 +366,56 @@ class ReportWizardController extends _$ReportWizardController {
 
   /// Waits for [targetSurfaceId]'s first `createSurface`/`updateComponents`
   /// event, rather than trusting `sendText`'s returned future alone to mean
-  /// "the controller/DataModel is ready" (see `A2uiSurfaceView`'s
+  /// "the controller/DataModel is ready" — `Conversation.sendRequest`
+  /// resolves once the message is dispatched to the transport, not once
+  /// Gemini actually responds; the real outcome only ever shows up via
+  /// `session.events` (see `A2uiSurfaceView`'s
   /// `ValueListenableBuilder<ConversationState>` for the equivalent pattern
-  /// the Result session relies on). Times out rather than hanging forever if
-  /// something goes wrong upstream.
+  /// the Result session relies on).
+  ///
+  /// **Correction**: this used to only listen for the success events and let
+  /// a plain 25s `Future.timeout` stand in for failure detection. Two bugs
+  /// in that: (1) it never listened for `ConversationError` at all, so a
+  /// failing Gemini call (e.g. an App Check error) produced no signal here
+  /// and just sat idle for the full 25s instead of failing fast with the
+  /// real error; (2) `Future.timeout`'s `onTimeout` callback must `throw` to
+  /// make the outer future fail — this one only logged a warning and
+  /// returned normally, which makes `timeout()` complete *successfully*.
+  /// Combined, any Gemini/App-Check failure silently "succeeded" after a
+  /// 25s stall, then crashed one line later in `_attachSubscriptions` with a
+  /// confusing "surface does not exist" error that had nothing to do with
+  /// the actual cause. Both fixed below: `ConversationError` now completes
+  /// the completer with an error (using the real error/stack trace), and
+  /// `onTimeout` now throws a `TimeoutException` instead of swallowing it.
   Future<void> _waitForSurface(WizardSession session, String targetSurfaceId) {
     final completer = Completer<void>();
     late final StreamSubscription<ConversationEvent> subscription;
     subscription = session.events.listen((event) {
-      final String? eventSurfaceId = switch (event) {
-        ConversationSurfaceAdded(:final surfaceId) => surfaceId,
-        ConversationComponentsUpdated(:final surfaceId) => surfaceId,
-        _ => null,
-      };
-      if (eventSurfaceId == targetSurfaceId && !completer.isCompleted) {
-        completer.complete();
+      if (completer.isCompleted) return;
+      switch (event) {
+        case ConversationSurfaceAdded(:final surfaceId):
+          if (surfaceId == targetSurfaceId) completer.complete();
+        case ConversationComponentsUpdated(:final surfaceId):
+          if (surfaceId == targetSurfaceId) completer.complete();
+        case ConversationError(:final error, :final stackTrace):
+          completer.completeError(error, stackTrace);
+        default:
+          break;
       }
     });
     return completer.future
         .timeout(
           const Duration(seconds: 25),
-          onTimeout: () => _log.w(
-            'Timed out waiting for surface "$targetSurfaceId" '
-            '(25s) — Gemini may not have followed the wizard contract',
-          ),
+          onTimeout: () {
+            _log.w(
+              'Timed out waiting for surface "$targetSurfaceId" '
+              '(25s) — Gemini may not have followed the wizard contract',
+            );
+            throw TimeoutException(
+              'Timed out waiting for surface "$targetSurfaceId"',
+              const Duration(seconds: 25),
+            );
+          },
         )
         .whenComplete(subscription.cancel);
   }
