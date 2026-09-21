@@ -138,10 +138,14 @@ One agent, after all Phase 1 branches are merged — **done, commit `0d1249b`**:
 - Lower-priority/not done: the router's brief onboarding-status-loading spinner and the map's marker-loading state — both resolve fast enough that a skeleton adds little. `AppSkeleton` is there if a later pass wants them.
 
 ### Phase 3 — QA + Build → **00:00 checkpoint**
-- [ ] Manual run-through of the primary flow (voice) and alternate flow (text) on a real device or emulator — **you drive this**, agent fixes bugs live
-- [ ] Offline mode test
-- [ ] `flutter build apk` (debug is fine for App Distribution testing unless you want release signing)
-- [ ] Fix anything blocking install/launch/crash
+- [x] Manual run-through on a real Android emulator (`sdk gphone64 arm64`, API 33) — done via `adb`-driven taps + screenshots since no device was in your hands at the time. Onboarding (all 3 screens), real OS permission dialogs, the map with real hotspot markers, and the idle-state prompt all confirmed working visually. Commit `ea5338e` fixes what this run found:
+  - AndroidManifest.xml had **zero permissions declared** — geolocator silently fell back to the Middle Belt centroid every time, RECORD_AUDIO was missing too. Fixed.
+  - Firebase AI Logic calls failed with "App Check token is invalid" — App Check was never activated client-side. Fixed (`FirebaseAppCheck.instance.activate()` in `main.dart` with the debug provider).
+  - `ReportSubmissionController` was accidentally `autoDispose` instead of `keepAlive`, inconsistent with every other cross-cutting provider. Fixed.
+  - The skeleton loader never showed during actual voice/text submissions (only button-tap follow-ups) since that path bypasses genui's own `isWaiting`. Fixed — `A2uiSurfaceView` now also watches `ReportSubmissionController`'s state.
+- [ ] **Blocking live Gemini calls**: App Check is activated but the debug token isn't registered yet — confirmed via a more specific `403 App attestation failed` response. **Your action**: register debug token `67ba28ec-b80f-4751-acfa-d604f2be122b` at https://console.firebase.google.com/project/farmer-herder-conflict-tracker/appcheck/apps?selectedAppId=1:944952545298:android:03bfe9c583062094bb48cb (App Check → Apps → Manage debug tokens). Once registered, re-run the text/voice flow to confirm a real Gemini response renders.
+- [ ] Offline mode test — not yet done (blocked behind confirming the live path works first)
+- [x] `flutter build apk --debug` — confirmed working, installs and runs
 - [ ] Tag/commit the state that hits the 00:00 bar even if rough — this is your fallback if later hours go sideways
 
 ### Phase 4 — Submission artifacts → **18:00 checkpoint**
