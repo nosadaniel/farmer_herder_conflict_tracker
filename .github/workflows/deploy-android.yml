@@ -42,7 +42,17 @@ jobs:
       # No codegen step here — the committed .g.dart files are trusted,
       # and `gate` (this job's dependency) already regenerated + validated
       # freshness before this job runs. See task.md CI/CD notes.
-      - run: flutter build apk --release
+      #
+      # --dart-define feeds lib/core/config/env.dart's Env.appCheckDebugToken
+      # (see main.dart's App Check activation): a fixed, pre-registered
+      # debug token so every tester's install of this same release build
+      # shares one token instead of each device minting its own unregistered
+      # one (Play Integrity doesn't work here — see main.dart's comment on
+      # why AndroidDebugProvider is used until this ships via the Play
+      # Store).
+      - run: |
+          flutter build apk --release \
+            --dart-define=APP_CHECK_DEBUG_TOKEN=${{ secrets.APP_CHECK_DEBUG_TOKEN }}
 
       # Direct Firebase CLI call instead of a third-party wrapper action —
       # wu-vincent/firebase-app-distribution-github-action (previously used

@@ -17,21 +17,37 @@ void main() async {
   // fails with "Firebase App Check token is invalid" (discovered during
   // Phase 3 device testing; see task.md).
   //
-  // Android, like web, needs a release-vs-debug split. `AndroidDebugProvider`
-  // (debug/profile builds) generates a random debug token per install,
-  // logged on first run — fine for one developer's own device (register it
-  // under Firebase Console -> App Check -> Manage debug tokens), but
-  // unworkable for a release APK handed to multiple testers via Firebase
-  // App Distribution: every tester's device would mint its own token, none
-  // of them pre-registered, so Gemini calls fail until each one is
-  // manually added. `AndroidPlayIntegrityProvider` (kReleaseMode only) is
-  // Firebase's production provider instead — it verifies any genuine build
-  // signed with the registered release certificate, no per-device token
-  // registration needed. Register the release keystore's SHA-256
-  // fingerprint (`keytool -list -v -keystore android/app/upload-keystore.jks
-  // -alias upload`) under Firebase Console -> App Check -> Apps -> the
-  // Android app -> Play Integrity before a release build's Gemini calls
-  // will succeed.
+  // **Correction (2026-09-22, real-device testing of an App-Distribution
+  // release build)**: this briefly split Android the same way as web —
+  // `AndroidPlayIntegrityProvider` for kReleaseMode, on the theory that it's
+  // Firebase's production provider and avoids per-device debug-token
+  // registration. That's true for a Play Store release, but **Firebase App
+  // Check's built-in Play Integrity provider only works for apps distributed
+  // through Google Play** (confirmed via multiple open
+  // firebase/firebase-android-sdk and firebase/flutterfire issues, 2026):
+  // Play Integrity attestation fails *client-side* — it can't even obtain a
+  // token — for a sideloaded/App-Distribution APK, regardless of a
+  // correctly-registered release-certificate fingerprint. The failure
+  // surfaces deep in whatever screen first calls Gemini as a generic
+  // "[firebase_app_check/unknown] ... 403 ... App attestation failed", with
+  // no indication it's a distribution-channel issue. Setting App Check
+  // enforcement to "Unenforced" in Firebase Console does NOT help either —
+  // that only changes whether the *server* requires a token; the *client*
+  // never successfully gets one in the first place.
+  //
+  // Until this ships via the Play Store, `AndroidDebugProvider` is the only
+  // provider that actually works for every distribution channel used during
+  // development (local debug, Firebase App Distribution). Its default
+  // behavior — auto-generate a random debug token per install — doesn't
+  // scale to multiple testers (each device's token needs manual Console
+  // registration), so CI-built release APKs pass a fixed, pre-registered
+  // token instead (`Env.appCheckDebugToken`, via deploy-android.yml's
+  // `--dart-define=APP_CHECK_DEBUG_TOKEN=...`): every tester's install of
+  // the same release build then shares that one already-registered token.
+  // Local dev leaves this unset and falls back to the SDK's own
+  // auto-generated token (register it yourself under Firebase Console ->
+  // App Check -> Manage debug tokens, same as before). Revisit
+  // `AndroidPlayIntegrityProvider` if/when this is ever published to Play.
   //
   // `activate()`'s web provider (ReCaptchaV3Provider) needs a real site key
   // — without one it throws (`Cannot read properties of null (reading
@@ -48,9 +64,9 @@ void main() async {
   // see `.env.example`) — otherwise `null`, so a release web build without
   // a configured key still boots instead of throwing.
   await FirebaseAppCheck.instance.activate(
-    providerAndroid: kReleaseMode
-        ? const AndroidPlayIntegrityProvider()
-        : const AndroidDebugProvider(),
+    providerAndroid: AndroidDebugProvider(
+      debugToken: Env.hasAppCheckDebugToken ? Env.appCheckDebugToken : null,
+    ),
     providerWeb: !kIsWeb
         ? null
         : kReleaseMode

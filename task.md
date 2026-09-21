@@ -224,6 +224,7 @@ Net effect: the Flutter-setup logic exists in exactly one place, the Firebase-co
 - `FIREBASE_APP_ID` — Android app ID from the Firebase console
 - `FIREBASE_SERVICE_ACCOUNT_JSON` (or `FIREBASE_TOKEN`) — credential for the App Distribution upload step
 - `RECAPTCHA_SITE_KEY` — Firebase Console → App Check → the web app → reCAPTCHA v3 provider. Web-only; feeds `deploy-web.yml`'s `--dart-define=SITE_KEY_RECAPTCHA_SITE_KEY=...` build arg (`lib/core/config/env.dart`'s `Env.recaptchaSiteKey`), which gates App Check activation on web release builds (see `main.dart`). Only needed if web isn't cut.
+- `APP_CHECK_DEBUG_TOKEN` — Android-only. Play Integrity doesn't work for Firebase App Distribution / sideloaded installs (confirmed via real-device testing 2026-09-22 — see `main.dart`'s App Check comment), so release APKs use `AndroidDebugProvider` with a **fixed** token instead of each device's own auto-generated one. Generate once: `firebase appcheck:debugtokens:create` (or Firebase Console → App Check → Apps → the Android app → Manage debug tokens → Add), register it, then paste the token value here. Feeds `deploy-android.yml`'s `--dart-define=APP_CHECK_DEBUG_TOKEN=...`.
 - GitHub Pages: repo Settings → Pages → source set to the `gh-pages` branch (or the Pages environment if using `actions/deploy-pages`) — one-time setup, only needed if web isn't cut
 
 ---
@@ -274,7 +275,7 @@ These block the plan at specific points — flagged above where relevant:
 2. **Device/emulator access** — install and manually exercise the app during Phase 3 QA (mic permission prompts, GPS prompts, actual voice audio with your accent/environment can't be simulated by an agent).
 3. **GitHub repository** — create it (or grant push access), keep it public, enable Pages later only if the web build stretch goal survives.
 4. **Firebase App Distribution** — set up the tester group / public link, since this requires your Firebase console access.
-5. **CI/CD secrets** — add `GOOGLE_SERVICES_JSON_B64`, `FIREBASE_OPTIONS_DART_B64`, `FIREBASE_JSON_B64`, `ANDROID_KEYSTORE_JKS_B64`, `ANDROID_KEY_PROPERTIES_B64`, `FIREBASE_APP_ID`, `FIREBASE_SERVICE_ACCOUNT_JSON`/`FIREBASE_TOKEN`, and (web only) `RECAPTCHA_SITE_KEY`, to GitHub Actions secrets, and enable GitHub Pages in repo settings if web isn't cut. See "CI/CD Pipeline" and "Android release signing" above.
+5. **CI/CD secrets** — add `GOOGLE_SERVICES_JSON_B64`, `FIREBASE_OPTIONS_DART_B64`, `FIREBASE_JSON_B64`, `ANDROID_KEYSTORE_JKS_B64`, `ANDROID_KEY_PROPERTIES_B64`, `FIREBASE_APP_ID`, `FIREBASE_SERVICE_ACCOUNT_JSON`/`FIREBASE_TOKEN`, `APP_CHECK_DEBUG_TOKEN`, and (web only) `RECAPTCHA_SITE_KEY`, to GitHub Actions secrets, and enable GitHub Pages in repo settings if web isn't cut. See "CI/CD Pipeline" and "Android release signing" above.
 6. **Generate the Android release keystore** — run the `keytool` command yourself (see "Android release signing"); you should own the passwords, not have an agent generate/see them.
 7. **Demo video** — record and narrate it. An agent can write the shot list and script; only you can produce the actual screen recording + voice.
 8. **Pitch deck review** — add real team name/branding, sanity-check narrative, since the drafted content is generic.
