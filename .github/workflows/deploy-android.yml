@@ -44,10 +44,22 @@ jobs:
       # freshness before this job runs. See task.md CI/CD notes.
       - run: flutter build apk --release
 
+      # Direct Firebase CLI call instead of a third-party wrapper action —
+      # wu-vincent/firebase-app-distribution-github-action (previously used
+      # here) was deleted/renamed upstream (confirmed 404 on
+      # github.com/wu-vincent/firebase-app-distribution-github-action as of
+      # 2026-09-21), which failed this job with "Unable to resolve action
+      # ... repository not found" before a single build step even ran. The
+      # official `firebase-tools` CLI's appdistribution:distribute command
+      # has no such dependency risk. Credentials go to $RUNNER_TEMP (cleaned
+      # up by the runner after the job, never committed).
       - name: Upload to Firebase App Distribution
-        uses: wu-vincent/firebase-app-distribution-github-action@v4
-        with:
-          appId: ${{ secrets.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          file: build/app/outputs/flutter-apk/app-release.apk
-          groups: testers
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
+          npx firebase-tools@latest appdistribution:distribute \
+            build/app/outputs/flutter-apk/app-release.apk \
+            --app "${{ secrets.FIREBASE_APP_ID }}" \
+            --groups testers
