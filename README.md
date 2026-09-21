@@ -67,11 +67,10 @@ Key design docs:
 
 ## 🎥 Demo Video
 
-Coming soon.
 
 ## 📊 Pitch Deck
 
-Coming soon.
+[View Pitch Deck](https://docs.google.com/presentation/d/1FJNdxRwUqEMFXstFCM1Z8hvaV3xXLN-H/edit?usp=sharing&ouid=105392615106570971108&rtpof=true&sd=true)
 
 ## 👥 Team
 

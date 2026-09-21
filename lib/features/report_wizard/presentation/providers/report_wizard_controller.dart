@@ -219,14 +219,18 @@ class ReportWizardController extends _$ReportWizardController {
   void back() {
     final ReportWizardStep? previous = state.step.previous;
     if (previous == null) return;
-    _log.i('Wizard back ${state.step.code} -> ${previous.code} (no Gemini call)');
+    _log.i(
+      'Wizard back ${state.step.code} -> ${previous.code} (no Gemini call)',
+    );
     state = state.copyWith(step: previous, clearValidationMessage: true);
   }
 
   /// Disposes the current session and starts a brand-new wizard run —
   /// triggered by the Result screen's "X" (close/restart) button.
   Future<void> restart() async {
-    _log.i('Wizard restart: disposing session, resetting to ${ReportWizardStep.where.code}');
+    _log.i(
+      'Wizard restart: disposing session, resetting to ${ReportWizardStep.where.code}',
+    );
     _session?.dispose();
     _session = null;
     for (final unsubscribers in _unsubscribeByStep.values) {
@@ -348,7 +352,11 @@ class ReportWizardController extends _$ReportWizardController {
         isGeneratingStep: false,
       );
     } catch (e, st) {
-      _log.e('Wizard step "${step.surfaceId}" failed to generate', error: e, stackTrace: st);
+      _log.e(
+        'Wizard step "${step.surfaceId}" failed to generate',
+        error: e,
+        stackTrace: st,
+      );
       state = state.copyWith(
         isGeneratingStep: false,
         error: 'Could not load this step: $e',
@@ -445,7 +453,9 @@ class ReportWizardController extends _$ReportWizardController {
     _log.i('Step 1: "Use my current location" selected, requesting permission');
     final granted = await requestLocationPermission();
     if (!granted) {
-      _log.w('Location permission denied — falling back to Middle Belt centroid');
+      _log.w(
+        'Location permission denied — falling back to Middle Belt centroid',
+      );
       _applyLocation(
         lat: _middleBeltFallback.$1,
         lng: _middleBeltFallback.$2,
@@ -467,7 +477,11 @@ class ReportWizardController extends _$ReportWizardController {
         placeName: 'My current location',
       );
     } catch (e, st) {
-      _log.e('Geolocator.getCurrentPosition failed — falling back to Middle Belt centroid', error: e, stackTrace: st);
+      _log.e(
+        'Geolocator.getCurrentPosition failed — falling back to Middle Belt centroid',
+        error: e,
+        stackTrace: st,
+      );
       _applyLocation(
         lat: _middleBeltFallback.$1,
         lng: _middleBeltFallback.$2,
