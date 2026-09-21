@@ -64,11 +64,12 @@ class GeminiRemoteDataSource {
     );
   }
 
-  /// Default Gemini model used for both steps. Not specified by the
-  /// contract doc — `gemini-2.5-flash` is a reasonable low-latency/free-tier
-  /// choice for a hackathon MVP; override via the constructor if a track
-  /// lead wants a different one.
-  static const String defaultModelName = 'gemini-2.5-flash';
+  /// Default Gemini model used for both steps. `gemini-2.5-flash` (the
+  /// brainstorm docs' original choice) is deprecated for new projects as of
+  /// live device testing — Firebase AI's own error response pointed at
+  /// `gemini-3.6-flash` as the replacement, confirmed working. Override via
+  /// the constructor if a track lead wants a different one.
+  static const String defaultModelName = 'gemini-3.6-flash';
 
   static const String _transcriptionInstruction =
       'Transcribe exactly what is said in the provided audio. '
