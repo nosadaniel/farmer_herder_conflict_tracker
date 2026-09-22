@@ -8,8 +8,6 @@
 
 ### 📲 [Install the Android app via Firebase App Distribution](https://appdistribution.firebase.dev/i/9fd9cdc659c86666)
 
-Or try it in the browser: **[nosadaniel.github.io/farmer_herder_conflict_tracker](https://nosadaniel.github.io/farmer_herder_conflict_tracker/)**
-
 ---
 
 ## 📌 Problem
@@ -69,9 +67,6 @@ You'll also need `google-services.json` / `firebase_options.dart` (Firebase proj
 
 Feature-based layering (`lib/features/<feature>/{data,domain,application,presentation}`) — see `brainstorm_docs/phase_2_development_patterns.md` for the full convention, and `task.md` for how the build was actually sequenced (parallel feature tracks, then integration).
 
-Key design docs:
-- `docs/a2ui_gemini_contract.md` — the frozen A2UI/Gemini contract for the report-generation surface
-- `docs/report_wizard_ux_flow.md` / `docs/refactor.md` — the Guided Report Wizard's UX spec and GenUI implementation guide
 
 ## 📊 Pitch Deck
 
@@ -91,22 +86,15 @@ Key design docs:
 - **Live report content**: voice/tap/text input from the person using the app in the moment (the Guided Report Wizard) — a new, user-submitted data point layered on top of the historical baseline above, not an independently sourced dataset.
 - **Product/UX research**: persona and design decisions (`brainstorm_docs/`) are grounded in publicly documented farmer-herder conflict dynamics in Nigeria's Middle Belt, not primary field research — appropriate for an invention-sprint proof of concept, not a claim of field-validated accuracy.
 
-### Approach to Trust and Accuracy
-
-- **Historical data is the verified baseline.** UCDP is an established, citation-grade academic conflict-event dataset, not crowd-sourced — it anchors the risk model in real, dated, sourced incidents rather than speculation.
-- **New user reports are explicitly unverified in this MVP.** Reporting is anonymous (no accounts, no PII collected — see `brainstorm_docs/phase_2_prd.md`'s Security/Privacy section), and reports are trusted at face value with no moderation pipeline. This is a deliberate, disclosed scope cut for the hackathon timeline, not an oversight — `brainstorm_docs/phase_2_prd.md`'s "Open Questions" section flags report verification/moderation as necessary future work before any real deployment.
-- **Risk classification is a documented, inspectable rubric, not a black box** — see `docs/a2ui_gemini_contract.md` §3 for the exact HIGH/MEDIUM/LOW criteria (report content plus nearby historical severity/recency), so a judge (or a future contributor) can audit *why* the app assessed a given risk level rather than trusting an opaque score.
-- **Data minimization by design**: no location or report content is persisted server-side — the architecture is client-side/offline-first (Drift/SQLite local cache only), and each report is a single stateless call to Firebase AI for that turn's processing, not a stored, cross-referenced profile.
 
 ### Use of AI Tools
 
-- **Claude Code** (Anthropic) was used throughout development: architecture planning, implementing the Guided Report Wizard refactor, CI/CD pipeline design and debugging, and fixing on-device issues (App Check/Play Integrity, GoRouter navigation, GenUI surface-error handling) found via real device/emulator testing. `task.md` is the running build log of that process, kept honest rather than cleaned up after the fact.
-- **Google Gemini**, via the Firebase AI SDK, is a **core runtime capability of the product itself**, not only a development tool — it powers voice transcription, risk assessment, and the dynamic A2UI screen generation described in `docs/a2ui_gemini_contract.md`. Every report a user submits triggers a live Gemini call; this is central to how the app works, not an add-on.
-- Per the hackathon's requirement that the core capstone idea be original and not AI-generated: the problem framing, target track, and initial concept predate AI-assisted implementation (see `brainstorm_docs/phase_1_brainstorm.md`, `idea/idea.md`) — AI tools supported *building* the idea, not originating it.
+- **Claude Code** (Anthropic) was used throughout development: architecture planning, implemention. 
+- **Google Gemini**, via the Firebase AI SDK, is a **core runtime capability of the product itself**, not only a development tool — it powers voice transcription, risk assessment, and the dynamic A2UI screen generation.
 
-## 👥 Team
-
+## Team
 - Nosa Daniel
+- OluwaKemi
 
 ## 📜 License
 
